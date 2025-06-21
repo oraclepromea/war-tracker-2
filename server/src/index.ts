@@ -1,112 +1,113 @@
+import 'reflect-metadata';
 import express from 'express';
-import { createServer } from 'http';
-import { Server } from 'socket.io';
 import cors from 'cors';
 import helmet from 'helmet';
-import mongoose from 'mongoose';
-import dotenv from 'dotenv';
-
-import { startDataAggregation } from './services/dataAggregation';
-import { connectDatabase } from './config/database';
-import { errorHandler } from './middleware/errorHandler';
-
-// Import routes
-import eventsRoutes from './routes/events';
-import analyticsRoutes from './routes/analytics';
-import countriesRoutes from './routes/countries';
-import aiRoutes from './routes/ai';
-import authRoutes from './routes/auth';
-
-dotenv.config();
+import rateLimit from 'express-rate-limit';
+import { createServer } from 'http';
+import { Server as SocketIOServer } from 'socket.io';
+import { AppDataSource } from './config/database';
+import { NewsAggregatorJob } from './jobs/newsAggregator';
+import apiRoutes from './routes/index';
+import { validateEnvironment, getConfig } from './config/validateEnv';
 
 const app = express();
-const httpServer = createServer(app);
-const io = new Server(httpServer, {
+const server = createServer(app);
+const io = new SocketIOServer(server, {
   cors: {
     origin: "http://localhost:5173",
     methods: ["GET", "POST"]
   }
 });
-const PORT = process.env.PORT || 5000;
 
 // Middleware
 app.use(helmet());
-app.use(cors({
-  origin: "http://localhost:5173",
-  credentials: true
-}));
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(cors());
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// Health check endpoint
-app.get('/health', (req, res) => {
+// Rate limiting
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 1000 // limit each IP to 1000 requests per windowMs
+});
+app.use(limiter);
+
+// Health check route
+app.get('/api/health', (req, res) => {
   res.json({ 
-    status: 'operational', 
+    status: 'OK', 
     timestamp: new Date().toISOString(),
-    version: '2.0.0',
-    services: {
-      database: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',
-      websocket: 'active',
-      dataAggregation: 'running'
-    }
+    database: AppDataSource.isInitialized ? 'connected' : 'disconnected',
+    version: '2.0.0'
   });
 });
 
-// API Routes
-app.use('/api/events', eventsRoutes);
-app.use('/api/countries', countriesRoutes);
-app.use('/api/analytics', analyticsRoutes);
-app.use('/api/auth', authRoutes);
-app.use('/api/ai', aiRoutes);
+// API routes
+app.use('/api', apiRoutes);
 
-// Error handling
-app.use(errorHandler);
-
-// 404 handler
-app.use('*', (req, res) => {
-  res.status(404).json({ success: false, error: 'Route not found' });
+// WebSocket connection handling
+io.on('connection', (socket) => {
+  console.log('Client connected:', socket.id);
+  
+  socket.emit('connection-status', { 
+    status: 'connected',
+    database: AppDataSource.isInitialized,
+    timestamp: new Date().toISOString()
+  });
+  
+  socket.on('disconnect', () => {
+    console.log('Client disconnected:', socket.id);
+  });
 });
 
-// WebSocket setup function
-const setupWebSocket = (io: Server) => {
-  io.on('connection', (socket) => {
-    console.log('Client connected:', socket.id);
-    
-    socket.on('disconnect', () => {
-      console.log('Client disconnected:', socket.id);
-    });
+// Global error handler
+app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
+  console.error('Global error handler:', err);
+  res.status(500).json({ 
+    error: 'Internal server error',
+    message: process.env.NODE_ENV === 'development' ? err.message : 'Something went wrong'
   });
-};
+});
 
-// Initialize WebSocket
-setupWebSocket(io);
-
-// Initialize services (make database connection optional)
 async function startServer() {
   try {
-    // Try to connect to database but don't fail if it's not available
+    const config = getConfig();
+    
+    // Try to initialize database (optional)
     try {
-      await connectDatabase();
+      await AppDataSource.initialize();
       console.log('✅ Database connected successfully');
     } catch (error) {
-      console.log('⚠️  Database connection failed - running in offline mode');
+      console.warn('⚠️  Database connection failed, running in RSS-only mode');
+      console.warn('💡 Install PostgreSQL and configure .env for full functionality');
     }
-
-    // Start data aggregation services (make this optional too)
-    try {
-      await startDataAggregation();
-      console.log('✅ Data aggregation services started');
-    } catch (error) {
-      console.log('⚠️  Data aggregation services not available');
+    
+    // Run initial news sync if jobs are enabled
+    if (config.jobs.enabled) {
+      console.log('🔄 Running initial news sync...');
+      setTimeout(async () => {
+        try {
+          await NewsAggregatorJob.fetchAndIngest();
+        } catch (error) {
+          console.warn('Initial news sync failed:', error);
+        }
+      }, 5000); // Wait 5 seconds after server start
     }
-
+    
     // Start server
-    httpServer.listen(PORT, () => {
-      console.log(`🚀 War Tracker API server running on http://localhost:${PORT}`);
-      console.log(`📊 Health check: http://localhost:${PORT}/health`);
-      console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
+    const PORT = process.env.PORT || config.app.port || 3001;
+    
+    server.listen(PORT, () => {
+      console.log(`🚀 War Tracker 2.0 Server running on port ${PORT}`);
+      console.log(`📊 Health check: http://localhost:${PORT}/api/health`);
+      console.log(`🔗 Frontend should be at: http://localhost:3000`);
+      
+      if (!AppDataSource.isInitialized) {
+        console.log('📡 Running in RSS-only mode - news aggregation available');
+        console.log('🔧 To enable full features, configure database in .env file');
+      }
     });
-
+    
   } catch (error) {
     console.error('❌ Failed to start server:', error);
     process.exit(1);
@@ -114,20 +115,21 @@ async function startServer() {
 }
 
 // Graceful shutdown
-process.on('SIGTERM', () => {
-  console.log('SIGTERM received, shutting down gracefully');
-  httpServer.close(() => {
-    console.log('Process terminated');
+process.on('SIGTERM', async () => {
+  console.log('🛑 Shutting down server...');
+  
+  if (AppDataSource.isInitialized) {
+    await AppDataSource.destroy();
+  }
+  
+  server.close(() => {
+    console.log('✅ Server closed');
     process.exit(0);
   });
 });
 
-process.on('SIGINT', () => {
-  console.log('SIGINT received, shutting down gracefully');
-  httpServer.close(() => {
-    console.log('Process terminated');
-    process.exit(0);
-  });
-});
+export { io };
 
-startServer();
+if (require.main === module) {
+  startServer();
+}

@@ -121,7 +121,7 @@ export class WikipediaImageService {
       'AH-64 Apache': 'Boeing AH-64 Apache',
       'Iron Dome': 'Iron Dome',
       'David\'s Sling': 'David\'s Sling',
-      'Jericho (missile)': 'Pershing II',
+      'Jericho III': 'Intermediate-range ballistic missile',
       'Spike NLOS': 'Spike (missile)',
       'Merkava Mk.4': 'Merkava',
       'Merkava Mk.3': 'Merkava',
@@ -195,8 +195,7 @@ export class WikipediaImageService {
       'Type 45': 'Type 45 destroyer',
       'Warrior': 'Warrior tracked armoured vehicle',
       'Foxhound': 'Ocelot (vehicle)',
-
-
+      'Virginia-class': 'Virginia-class submarine',
  
 
 

@@ -42,7 +42,22 @@
     "type": "git",
     "url": "https://github.com/yourusername/war-tracker-2.0.git"
   },
+  "dependencies": {
+    "axios": "^1.6.2",
+    "bull": "^4.12.0",
+    "clsx": "^2.1.1",
+    "express-rate-limit": "^7.1.5",
+    "express-validator": "^7.0.1",
+    "ioredis": "^5.3.2",
+    "node-cron": "^3.0.3",
+    "pg": "^8.11.3",
+    "rss-parser": "^3.13.0",
+    "tailwind-merge": "^3.3.1",
+    "typeorm": "^0.3.17"
+  },
   "devDependencies": {
+    "@types/node-cron": "^3.0.11",
+    "@types/pg": "^8.10.9",
     "concurrently": "^8.2.2"
   },
   "engines": {

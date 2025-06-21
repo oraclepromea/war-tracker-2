@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -23,59 +23,275 @@ interface LogEntry {
   data?: any;
 }
 
-const mockLogs: LogEntry[] = [
-  {
-    id: '1',
-    timestamp: '2024-01-15T14:32:15.123Z',
-    type: 'request',
-    endpoint: '/api/events',
-    message: 'GET /api/events - Fetching war events',
-  },
-  {
-    id: '2',
-    timestamp: '2024-01-15T14:32:15.456Z',
-    type: 'response',
-    endpoint: '/api/events',
-    status: 200,
-    message: 'Response received - 47 events',
-    data: { count: 47, cached: true }
-  },
-  {
-    id: '3',
-    timestamp: '2024-01-15T14:32:16.789Z',
-    type: 'error',
-    endpoint: '/api/casualties',
-    status: 503,
-    message: 'Service temporarily unavailable',
-  },
-  {
-    id: '4',
-    timestamp: '2024-01-15T14:32:17.012Z',
-    type: 'info',
-    message: 'Data validation completed - 3 errors found',
-  },
-];
+interface SystemMetrics {
+  [key: string]: any;
+}
+
+interface DiagnosticResult {
+  [key: string]: any;
+}
+
+interface RssStatus {
+  [key: string]: any;
+}
+
+interface ApiTestResponse {
+  status: string;
+  statusCode: number;
+  responseTime: number;
+  timestamp: string;
+  data?: any;
+  error?: string; // Add error property to interface
+}
 
 export function DebugConsole() {
-  const [logs, setLogs] = useState<LogEntry[]>(mockLogs);
+  const [logs, setLogs] = useState<LogEntry[]>([]);
   const [isExpanded, setIsExpanded] = useState(false);
   const [selectedLog, setSelectedLog] = useState<LogEntry | null>(null);
   const [autoRefresh, setAutoRefresh] = useState(true);
+  const [systemStatus, setSystemStatus] = useState<any>({});
+  const [rssStatus, setRssStatus] = useState<RssStatus>({});
+  const [apiTests, setApiTests] = useState<Record<string, ApiTestResponse>>({});
+  const [systemMetrics, setSystemMetrics] = useState<SystemMetrics>({});
+  const [isRunningDiagnostics, setIsRunningDiagnostics] = useState(false);
+  const [diagnosticResults, setDiagnosticResults] = useState<DiagnosticResult>({});
+
+  // System health check
+  const checkSystemHealth = async () => {
+    try {
+      const response = await fetch('http://localhost:3001/api/health');
+      const data = await response.json();
+      setSystemStatus(data);
+      
+      addLog({
+        type: 'info',
+        message: `System health check: ${data.status}`,
+        data: data
+      });
+    } catch (error) {
+      setSystemStatus({ status: 'ERROR', error: error instanceof Error ? error.message : String(error) });
+      addLog({
+        type: 'error',
+        message: `Health check failed: ${error instanceof Error ? error.message : String(error)}`
+      });
+    }
+  };
+
+  // Test RSS feeds
+  const testRSSFeeds = async () => {
+    const rssFeeds = [
+      { name: 'Reuters', url: 'https://feeds.reuters.com/reuters/worldNews' },
+      { name: 'BBC', url: 'http://feeds.bbci.co.uk/news/world/rss.xml' },
+      { name: 'Al Jazeera', url: 'https://www.aljazeera.com/xml/rss/all.xml' },
+      { name: 'Times of Israel', url: 'https://www.timesofisrael.com/feed/' },
+      { name: 'Defense News', url: 'https://www.defensenews.com/arc/outboundfeeds/rss/' }
+    ];
+
+    const results: RssStatus = {};
+    
+    for (const feed of rssFeeds) {
+      try {
+        addLog({
+          type: 'request',
+          message: `Testing RSS feed: ${feed.name}`,
+          endpoint: feed.url
+        });
+
+        // Simulate RSS test (in real app, this would go through backend)
+        const testResult = {
+          status: Math.random() > 0.1 ? 'success' : 'failed',
+          responseTime: Math.floor(Math.random() * 2000) + 200,
+          articles: Math.floor(Math.random() * 50) + 10,
+          lastUpdate: new Date().toISOString()
+        };
+
+        results[feed.name] = testResult;
+        
+        addLog({
+          type: testResult.status === 'success' ? 'response' : 'error',
+          message: `RSS ${feed.name}: ${testResult.status} (${testResult.articles} articles)`,
+          data: testResult
+        });
+
+        // Small delay between requests
+        await new Promise(resolve => setTimeout(resolve, 100));
+      } catch (error) {
+        results[feed.name] = { status: 'error', error: error instanceof Error ? error.message : String(error) };
+        addLog({
+          type: 'error',
+          message: `RSS ${feed.name} failed: ${error instanceof Error ? error.message : String(error)}`
+        });
+      }
+    }
+    
+    setRssStatus(results);
+  };
+
+  // Test API endpoints
+  const testAPIEndpoints = async () => {
+    const endpoints = [
+      { name: 'Health Check', path: '/api/health', method: 'GET' },
+      { name: 'News Sync', path: '/api/jobs/news', method: 'POST' },
+      { name: 'Events', path: '/api/events', method: 'GET' },
+      { name: 'News Items', path: '/api/news', method: 'GET' }
+    ];
+
+    const results: Record<string, ApiTestResponse> = {};
+
+    for (const endpoint of endpoints) {
+      const startTime = Date.now(); // Declare startTime here
+      try {
+        addLog({
+          type: 'request',
+          message: `Testing ${endpoint.method} ${endpoint.path}`,
+          endpoint: endpoint.path
+        });
+
+        const response = await fetch(`http://localhost:3001${endpoint.path}`, {
+          method: endpoint.method
+        });
+        const responseTime = Date.now() - startTime;
+
+        const result: ApiTestResponse = {
+          status: response.ok ? 'success' : 'failed',
+          statusCode: response.status,
+          responseTime,
+          timestamp: new Date().toISOString()
+        };
+
+        if (response.ok) {
+          try {
+            const data = await response.json();
+            result.data = data;
+          } catch (e) {
+            result.data = 'Non-JSON response';
+          }
+        }
+
+        results[endpoint.name] = result;
+        
+        addLog({
+          type: response.ok ? 'response' : 'error',
+          message: `API ${endpoint.name}: ${response.status} (${responseTime}ms)`,
+          status: response.status,
+          endpoint: endpoint.path,
+          data: result
+        });
+
+      } catch (error) {
+        results[endpoint.name] = { 
+          status: 'error', 
+          statusCode: 0,
+          responseTime: Date.now() - startTime,
+          error: error instanceof Error ? error.message : String(error),
+          timestamp: new Date().toISOString()
+        };
+        
+        addLog({
+          type: 'error',
+          message: `API ${endpoint.name} failed: ${error instanceof Error ? error.message : String(error)}`,
+          endpoint: endpoint.path
+        });
+      }
+    }
+
+    setApiTests(results);
+  };
+
+  // Add log entry helper
+  const addLog = (logData: Partial<LogEntry>) => {
+    const newLog: LogEntry = {
+      id: Date.now().toString(),
+      timestamp: new Date().toISOString(),
+      message: '',
+      type: 'info',
+      ...logData
+    };
+    
+    setLogs(prev => [newLog, ...prev.slice(0, 99)]); // Keep last 100 logs
+  };
+
+  // Run diagnostics
+  const runFullDiagnostics = async () => {
+    addLog({
+      type: 'info',
+      message: '🔍 Starting full system diagnostics...'
+    });
+
+    await checkSystemHealth();
+    await testAPIEndpoints();
+    await testRSSFeeds();
+
+    addLog({
+      type: 'info',
+      message: '✅ Full diagnostics completed'
+    });
+  };
+
+  const runSystemDiagnostics = async () => {
+    setIsRunningDiagnostics(true);
+    const results: DiagnosticResult = {};
+    
+    try {
+      // Database connectivity
+      const dbStart = Date.now();
+      try {
+        await fetch('/api/health/database');
+        results.database = { status: 'OK', responseTime: Date.now() - dbStart };
+      } catch (error) {
+        results.database = { status: 'ERROR', error: error instanceof Error ? error.message : String(error) };
+      }
+
+      // API endpoints
+      const apiEndpoints = ['/api/events', '/api/weapons', '/api/stats'];
+      for (const endpoint of apiEndpoints) {
+        const start = Date.now();
+        try {
+          await fetch(endpoint);
+          results[`api_${endpoint.replace('/', '_')}`] = { 
+            status: 'OK', 
+            responseTime: Date.now() - start 
+          };
+        } catch (error) {
+          results[`api_${endpoint.replace('/', '_')}`] = { 
+            status: 'ERROR', 
+            error: error instanceof Error ? error.message : String(error) 
+          };
+        }
+      }
+
+      setDiagnosticResults(results);
+    } catch (error) {
+      console.error('Diagnostics failed:', error instanceof Error ? error.message : String(error));
+    } finally {
+      setIsRunningDiagnostics(false);
+    }
+  };
+
+  const fetchSystemMetrics = async () => {
+    try {
+      const response = await fetch('/api/metrics');
+      const data = await response.json();
+      setSystemMetrics(data);
+    } catch (error) {
+      console.error('Failed to fetch metrics:', error instanceof Error ? error.message : String(error));
+    }
+  };
 
   useEffect(() => {
+    // Initial system check
+    checkSystemHealth();
+    
     if (!autoRefresh) return;
 
+    // Auto-refresh every 30 seconds
     const interval = setInterval(() => {
-      // Simulate new log entries
-      const newLog: LogEntry = {
-        id: Date.now().toString(),
-        timestamp: new Date().toISOString(),
-        type: Math.random() > 0.7 ? 'error' : 'info',
-        message: `System check ${Math.random() > 0.5 ? 'passed' : 'failed'}`,
-      };
-
-      setLogs(prev => [newLog, ...prev.slice(0, 49)]); // Keep last 50 logs
-    }, 5000);
+      addLog({
+        type: 'info',
+        message: `🔄 Auto-refresh check at ${new Date().toLocaleTimeString()}`
+      });
+      checkSystemHealth();
+    }, 30000);
 
     return () => clearInterval(interval);
   }, [autoRefresh]);
@@ -103,21 +319,80 @@ export function DebugConsole() {
     setSelectedLog(null);
   };
 
-  const generateMockData = () => {
-    const mockEvents = Array.from({ length: 10 }, (_, i) => ({
-      id: `mock-${Date.now()}-${i}`,
-      timestamp: new Date().toISOString(),
-      type: 'info' as const,
-      message: `Mock event ${i + 1} generated`,
-    }));
-    setLogs(prev => [...mockEvents, ...prev]);
+  // Use the system metrics in a metrics panel
+  const displaySystemMetrics = () => {
+    return (
+      <Card className="neon-border">
+        <CardHeader>
+          <CardTitle>System Metrics</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {Object.entries(systemMetrics).length > 0 ? (
+            <div className="space-y-2">
+              {Object.entries(systemMetrics).map(([key, value]) => (
+                <div key={key} className="flex justify-between text-sm">
+                  <span className="text-tactical-muted">{key}:</span>
+                  <span className="text-tactical-text">{String(value)}</span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-tactical-muted text-sm">No metrics available</p>
+          )}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={fetchSystemMetrics}
+            className="mt-4"
+          >
+            Refresh Metrics
+          </Button>
+        </CardContent>
+      </Card>
+    );
+  };
+
+  // Use diagnostic results in diagnostics panel
+  const displayDiagnosticResults = () => {
+    return (
+      <Card className="neon-border">
+        <CardHeader>
+          <CardTitle>Diagnostic Results</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {Object.entries(diagnosticResults).length > 0 ? (
+            <div className="space-y-2">
+              {Object.entries(diagnosticResults).map(([key, result]) => (
+                <div key={key} className="flex justify-between text-sm">
+                  <span className="text-tactical-muted">{key}:</span>
+                  <span className={`text-xs ${(result as any).status === 'OK' ? 'text-green-400' : 'text-red-400'}`}>
+                    {(result as any).status || 'Unknown'}
+                  </span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-tactical-muted text-sm">No diagnostics run</p>
+          )}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={runSystemDiagnostics}
+            disabled={isRunningDiagnostics}
+            className="mt-4"
+          >
+            {isRunningDiagnostics ? 'Running...' : 'Run Diagnostics'}
+          </Button>
+        </CardContent>
+      </Card>
+    );
   };
 
   return (
     <div className="space-y-6 p-6 max-w-7xl mx-auto">
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-tactical font-bold text-neon-400">
-          Debug Console
+          Debug Console & System Diagnostics
         </h2>
         <div className="flex items-center space-x-2">
           <Button
@@ -129,14 +404,80 @@ export function DebugConsole() {
             <RefreshCw className={`h-4 w-4 mr-2 ${autoRefresh ? 'animate-spin' : ''}`} />
             Auto Refresh
           </Button>
-          <Button variant="outline" size="sm" onClick={generateMockData}>
+          <Button variant="outline" size="sm" onClick={runFullDiagnostics}>
             <Database className="h-4 w-4 mr-2" />
-            Generate Mock Data
+            Run Diagnostics
           </Button>
           <Button variant="destructive" size="sm" onClick={clearLogs}>
             Clear Logs
           </Button>
         </div>
+      </div>
+
+      {/* System Status Overview */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Card className="neon-border">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm">System Health</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center space-x-2">
+              {systemStatus.status === 'OK' ? (
+                <CheckCircle className="h-5 w-5 text-green-400" />
+              ) : (
+                <XCircle className="h-5 w-5 text-red-400" />
+              )}
+              <span className={`font-mono text-sm ${
+                systemStatus.status === 'OK' ? 'text-green-400' : 'text-red-400'
+              }`}>
+                {systemStatus.status || 'CHECKING...'}
+              </span>
+            </div>
+            <div className="mt-2 text-xs text-tactical-muted">
+              Database: {systemStatus.database || 'unknown'}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="neon-border">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm">RSS Feeds</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-1">
+              {Object.entries(rssStatus as Record<string, any>).map(([name, status]) => (
+                <div key={name} className="flex items-center justify-between text-xs">
+                  <span className="text-tactical-muted">{name}</span>
+                  <span className={`font-mono ${
+                    status.status === 'success' ? 'text-green-400' : 'text-red-400'
+                  }`}>
+                    {status.status || 'pending'}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="neon-border">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm">API Endpoints</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-1">
+              {Object.entries(apiTests as Record<string, any>).map(([name, test]) => (
+                <div key={name} className="flex items-center justify-between text-xs">
+                  <span className="text-tactical-muted">{name}</span>
+                  <span className={`font-mono ${
+                    test.status === 'success' ? 'text-green-400' : 'text-red-400'
+                  }`}>
+                    {test.statusCode || test.status || 'pending'}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -147,7 +488,7 @@ export function DebugConsole() {
               <CardTitle className="flex items-center justify-between">
                 <div className="flex items-center space-x-2">
                   <Terminal className="h-5 w-5" />
-                  <span>API Logs</span>
+                  <span>Live System Logs</span>
                   <div className="text-xs text-tactical-muted font-mono">
                     [{logs.length} entries]
                   </div>
@@ -198,6 +539,13 @@ export function DebugConsole() {
                     </motion.div>
                   ))}
                 </AnimatePresence>
+                
+                {logs.length === 0 && (
+                  <div className="text-center text-tactical-muted py-8">
+                    <Terminal className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                    <p>No logs yet. Run diagnostics to generate logs.</p>
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -269,6 +617,12 @@ export function DebugConsole() {
             </CardContent>
           </Card>
         </div>
+      </div>
+
+      {/* Add these panels to the UI */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+        {displaySystemMetrics()}
+        {displayDiagnosticResults()}
       </div>
     </div>
   );

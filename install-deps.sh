@@ -1,19 +1,20 @@
 #!/bin/bash
 
-echo "Installing War Tracker 2.0 Dependencies..."
+echo "🔧 Installing Missing Dependencies"
+echo "================================="
 
 # Install client dependencies
-echo "Installing client dependencies..."
-cd client
-npm install
+echo "Installing React Query for client..."
+cd "/Users/RoRo_HQ/War Tracker 2.0/client"
+npm install @tanstack/react-query
 
 # Install server dependencies
-echo "Installing server dependencies..."
-cd ../server
-npm install
+echo "Installing TypeORM and PostgreSQL for server..."
+cd "/Users/RoRo_HQ/War Tracker 2.0/server"
+npm install typeorm pg @types/pg reflect-metadata
 
-echo "All dependencies installed successfully!"
+echo "✅ All dependencies installed!"
 echo ""
-echo "To start the development servers:"
-echo "1. Client: cd client && npm run dev"
-echo "2. Server: cd server && npm run dev"
+echo "🚀 Ready to start development:"
+echo "cd '/Users/RoRo_HQ/War Tracker 2.0'"
+echo "npm run dev"

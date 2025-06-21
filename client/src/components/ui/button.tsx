@@ -1,43 +1,37 @@
 import * as React from "react"
-import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "@/lib/utils"
 
-const buttonVariants = cva(
-  "inline-flex items-center justify-center rounded-md text-sm font-medium transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neon-400 disabled:pointer-events-none disabled:opacity-50",
-  {
-    variants: {
-      variant: {
-        default: "tactical-button",
-        destructive: "bg-red-900 text-red-100 hover:bg-red-800 border border-red-600",
-        outline: "border border-neon-400 bg-transparent hover:bg-neon-950 text-neon-400",
-        secondary: "bg-tactical-border text-tactical-text hover:bg-tactical-panel",
-        ghost: "hover:bg-neon-950 hover:text-neon-300 text-tactical-muted",
-        link: "text-neon-400 underline-offset-4 hover:underline",
-        neon: "neon-border neon-glow bg-neon-950 text-neon-300"
-      },
-      size: {
-        default: "h-10 px-4 py-2",
-        sm: "h-9 rounded-md px-3",
-        lg: "h-11 rounded-md px-8",
-        icon: "h-10 w-10",
-      },
-    },
-    defaultVariants: {
-      variant: "default",
-      size: "default",
-    },
-  }
-)
-
 export interface ButtonProps
-  extends React.ButtonHTMLAttributes<HTMLButtonElement>,
-    VariantProps<typeof buttonVariants> {}
+  extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+  variant?: "default" | "destructive" | "outline" | "secondary" | "ghost" | "link" | "neon"
+  size?: "default" | "sm" | "lg" | "icon"
+}
 
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className, variant, size, ...props }, ref) => {
+  ({ className, variant = "default", size = "default", ...props }, ref) => {
     return (
       <button
-        className={cn(buttonVariants({ variant, size, className }))}
+        className={cn(
+          "inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
+          {
+            // Default variants
+            "bg-primary text-primary-foreground hover:bg-primary/90": variant === "default",
+            "bg-destructive text-destructive-foreground hover:bg-destructive/90": variant === "destructive",
+            "border border-input bg-background hover:bg-accent hover:text-accent-foreground": variant === "outline",
+            "bg-secondary text-secondary-foreground hover:bg-secondary/80": variant === "secondary",
+            "hover:bg-accent hover:text-accent-foreground": variant === "ghost",
+            "text-primary underline-offset-4 hover:underline": variant === "link",
+            // Custom neon variant
+            "bg-neon-400 text-black hover:bg-neon-300 font-tactical": variant === "neon",
+          },
+          {
+            "h-10 px-4 py-2": size === "default",
+            "h-9 rounded-md px-3": size === "sm",
+            "h-11 rounded-md px-8": size === "lg",
+            "h-10 w-10": size === "icon",
+          },
+          className
+        )}
         ref={ref}
         {...props}
       />
@@ -46,4 +40,4 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
 )
 Button.displayName = "Button"
 
-export { Button, buttonVariants }
+export { Button }

@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Navigation } from '@/components/Navigation';
 import { Dashboard } from '@/components/Dashboard';
 import { WarEvents } from '@/components/WarEvents';
 import { CountriesAndForces } from '@/components/CountriesAndForces';
 import { Settings } from '@/components/Settings';
 import { DebugConsole } from '@/components/DebugConsole';
+import { BattleMaps } from '@/components/BattleMaps';
 import { motion, AnimatePresence } from 'framer-motion';
 import './index.css';
 
@@ -17,6 +18,8 @@ function App() {
         return <Dashboard />;
       case 'events':
         return <WarEvents />;
+      case 'maps':
+        return <BattleMaps />;
       case 'countries':
         return <CountriesAndForces />;
       case 'settings':

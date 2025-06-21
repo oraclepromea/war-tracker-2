@@ -1,4 +1,3 @@
-import React from 'react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { 
@@ -7,7 +6,8 @@ import {
   Shield, 
   Settings, 
   Bug,
-  Activity
+  Activity,
+  Map as MapIcon
 } from 'lucide-react';
 
 interface NavigationProps {
@@ -18,6 +18,7 @@ interface NavigationProps {
 const tabs = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { id: 'events', label: 'War Events', icon: Crosshair },
+  { id: 'maps', label: 'Battle Maps', icon: MapIcon },
   { id: 'countries', label: 'Countries & Forces', icon: Shield },
   { id: 'settings', label: 'Settings', icon: Settings },
   { id: 'debug', label: 'Debug', icon: Bug },

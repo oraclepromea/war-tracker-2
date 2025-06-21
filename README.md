@@ -56,239 +56,161 @@ A real-time military conflict tracking system with AI-powered analysis, focusing
 
 ## 🚀 Quick Start
 
+# War Tracker 2.0 - Quick Start Guide
+
+## 🚀 Getting Started
+
 ### Prerequisites
 - Node.js 18+
-- Docker & Docker Compose
-- OpenRouter API key
-- News API key (optional)
+- PostgreSQL (optional - will run in demo mode without it)
+- Redis (optional - for job queues)
 
-### Development Setup
+### Installation
 
-1. **Clone the repository**
+1. **Clone and setup:**
 ```bash
-git clone https://github.com/yourusername/war-tracker-2.0.git
-cd war-tracker-2.0
+git clone <your-repo-url>
+cd "War Tracker 2.0"
+chmod +x setup.sh
+./setup.sh
 ```
 
-2. **Set up environment variables**
+2. **Configure environment:**
 ```bash
+# Edit .env file with your API keys
 cp .env.example .env
-# Edit .env with your API keys
+# Add your NewsAPI key from https://newsapi.org
 ```
 
-3. **Start with Docker Compose**
+3. **Start the application:**
 ```bash
-# Development mode
-docker-compose --profile development up -d
-
-# Production mode
-docker-compose --profile production up -d
+npm run dev
 ```
 
-4. **Or run locally**
+## 🔄 What We've Implemented
+
+### ✅ Phase 1: Foundation Complete
+- **Database Models**: Event, NewsItem, Weapon, Attack
+- **API Endpoints**: `/api/events`, `/api/news`, `/api/jobs/news`
+- **Real-time News Aggregation**: RSS feeds from Reuters, BBC, Al Jazeera
+- **Frontend Integration**: React Query hooks for real data consumption
+
+### 📊 Current Data Sources
+- **Reuters RSS**: International news feed
+- **BBC World News**: Global coverage
+- **Al Jazeera**: Middle East focused
+- **NewsAPI**: Global aggregation (with API key)
+
+### 🎯 Working Features
+1. **Real-time Event Timeline**: Replaces mock data with live RSS feeds
+2. **News Aggregation**: Fetches and processes war-related articles
+3. **Data Source Monitoring**: Live status in Settings tab
+4. **Manual Sync**: Trigger data refresh for development
+
+## 🧪 Testing the System
+
+### Test the API:
 ```bash
-# Install dependencies
-npm install
-cd client && npm install
-cd ../server && npm install
+# Health check
+curl http://localhost:3001/health
 
-# Start MongoDB (if not using Docker)
-mongod
+# Trigger news aggregation
+curl -X POST http://localhost:3001/api/jobs/news
 
-# Start the server
+# Check recent events
+curl http://localhost:3001/api/events/recent
+
+# Check latest news
+curl http://localhost:3001/api/news/latest
+```
+
+### Frontend Features:
+- **War Events Timeline**: Now shows real events from RSS feeds
+- **Settings > Data Sources**: Shows live source status and sync buttons
+- **Real-time Toggle**: Enable/disable live updates
+- **Severity Filtering**: Filter events by importance level
+
+## 🔧 Development Commands
+
+```bash
+# Start both client and server
+npm run dev
+
+# Start server only
 cd server && npm run dev
 
-# Start the client (in another terminal)
+# Start client only  
 cd client && npm run dev
+
+# Run news aggregation job
+curl -X POST http://localhost:3001/api/jobs/news
 ```
 
-### Manual Setup
+## 📈 Next Implementation Steps
 
-1. **Backend Setup**
+### Phase 2: Enhanced Data Sources
+- [ ] ACLED conflict database integration
+- [ ] GDELT global events monitoring
+- [ ] Weapons database sync with Wikipedia images
+- [ ] Attack tracking with weapon correlations
+
+### Phase 3: Real-time Features
+- [ ] WebSocket connections for live updates
+- [ ] Automated job scheduling with node-cron
+- [ ] Map component with attack markers
+- [ ] Alert system for critical events
+
+### Phase 4: Production Ready
+- [ ] Rate limiting and API security
+- [ ] Redis caching for performance
+- [ ] Error monitoring and logging
+- [ ] Docker containerization
+
+## 🐛 Troubleshooting
+
+### Common Issues:
+
+**Database connection fails:**
 ```bash
-cd server
-npm install
+# Start PostgreSQL
+brew services start postgresql
+
+# Create database manually
+createdb war_tracker_db
+```
+
+**Server won't start:**
+```bash
+# Check dependencies
+cd server && npm install
 npm run build
-npm start
 ```
 
-2. **Frontend Setup**
+**No events showing:**
 ```bash
-cd client
-npm install
-npm run build
-npm run preview
+# Trigger manual news sync
+curl -X POST http://localhost:3001/api/jobs/news
 ```
 
-## 🔧 Configuration
+**CORS errors:**
+- Ensure frontend is running on http://localhost:3000
+- Check server CORS configuration
 
-### Environment Variables
+## 📚 Documentation
 
-```bash
-# Server Configuration
-NODE_ENV=development|production
-PORT=5000
+- **Setup Guide**: `docs/DATA_PIPELINE_SETUP_GUIDE.md`
+- **API Documentation**: Available at `/api/health`
+- **Environment Variables**: See `.env.example`
 
-# Database
-MONGODB_URI=mongodb://localhost:27017/war-tracker
-REDIS_URL=redis://localhost:6379
+## 🎯 Current Status
 
-# API Keys
-OPENROUTER_API_KEY=your_openrouter_api_key
-NEWS_API_KEY=your_news_api_key
+✅ **Working**: RSS news aggregation, event timeline, API endpoints
+✅ **Live Data**: War Events Timeline now uses real RSS feeds
+✅ **Settings Integration**: Real data source monitoring
+🔄 **In Progress**: Database persistence, automated scheduling
+⏳ **Next**: ACLED integration, weapon tracking, map features
 
-# Authentication
-JWT_SECRET=your-secret-key
-
-# Data Aggregation
-DATA_FETCH_INTERVAL=300000  # 5 minutes
-AI_ANALYSIS_ENABLED=true
-```
-
-### Docker Configuration
-
-The project includes production-ready Docker configuration:
-
-- **Multi-stage builds** for optimized images
-- **Non-root user** for security
-- **Health checks** for container monitoring
-- **Volume mounting** for persistent data
-
-## 📡 API Endpoints
-
-### Events
-- `GET /api/events` - List events with filtering
-- `GET /api/events/:id` - Get specific event
-- `GET /api/events/analytics/summary` - Event analytics
-- `GET /api/events/timeline/:period` - Timeline data
-
-### Countries
-- `GET /api/countries` - List countries with stats
-- `GET /api/countries/:id` - Country details
-- `GET /api/countries/:id/events` - Country-specific events
-
-### Analytics
-- `GET /api/analytics/dashboard` - Dashboard metrics
-- `GET /api/analytics/heatmap` - Geographic data
-- `GET /api/analytics/trends` - Trend analysis
-
-### AI Analysis
-- `POST /api/ai/analyze` - Analyze text for events
-- `GET /api/ai/threat-assessment` - Current threat level
-- `POST /api/ai/verify` - Verify event credibility
-
-### Authentication
-- `POST /api/auth/login` - User login
-- `POST /api/auth/verify` - Token verification
-- `GET /api/auth/me` - Current user info
-
-## 🎨 UI Components
-
-### Main Interface
-- **Navigation Tabs** - Dashboard, Events, Countries, Settings, Debug
-- **Real-time Status Bar** - Connection status and live updates
-- **Tactical Panels** - Military-style information displays
-
-### Dashboard
-- **Summary Tiles** - Key metrics with animations
-- **Recent Events Feed** - Live event stream
-- **War Overview** - Current conflict status
-- **Activity Tracker** - Today's events and casualties
-
-### Events Timeline
-- **Filterable Event List** - Search and filter capabilities
-- **Event Details Panel** - Comprehensive event information
-- **Severity Indicators** - Color-coded threat levels
-- **Source Verification** - Credibility scoring
-
-### Countries & Forces
-- **Country Cards** - Military data and statistics
-- **Force Breakdown** - Air, naval, ground forces
-- **Weapon Inventory** - 3D weapon visualizations
-- **Casualty Tracking** - Real-time casualty data
-
-## 🔒 Security Features
-
-- **Rate Limiting** - Prevents API abuse
-- **JWT Authentication** - Secure user sessions
-- **Input Validation** - Prevents injection attacks
-- **CORS Configuration** - Cross-origin protection
-- **Helmet.js** - Security headers
-- **Container Security** - Non-root user, minimal base image
-
-## 📊 Data Flow
-
-1. **Data Ingestion** - RSS feeds and APIs polled every 5 minutes
-2. **AI Analysis** - OpenRouter processes articles for conflict relevance
-3. **Verification** - Multi-source credibility scoring
-4. **Storage** - Events stored in MongoDB with indexes
-5. **Real-time Updates** - WebSocket broadcasts to connected clients
-6. **Analytics** - Aggregated data for dashboard and insights
-
-## 🔄 CI/CD Pipeline
-
-The GitHub Actions workflow includes:
-
-1. **Testing** - Unit tests and linting
-2. **Security Scanning** - Trivy vulnerability assessment
-3. **Docker Build** - Multi-stage container builds
-4. **Registry Push** - GitHub Container Registry
-5. **Deployment** - Staging and production environments
-6. **Notifications** - Slack alerts for deployment status
-
-## 🚀 Deployment
-
-### Docker Deployment
-```bash
-# Production deployment
-docker-compose --profile production up -d
-
-# View logs
-docker-compose logs -f war-tracker
-
-# Scale services
-docker-compose up -d --scale war-tracker=3
-```
-
-### Manual Deployment
-```bash
-# Build for production
-cd client && npm run build
-cd ../server && npm run build
-
-# Start production server
-NODE_ENV=production npm start
-```
-
-## 🛡️ Default Credentials
-
-For development/testing:
-- **Username:** `admin` or `analyst`
-- **Password:** `password`
-
-⚠️ **Change these in production!**
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
-## 📝 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## ⚠️ Disclaimer
-
-This tool is for educational and research purposes. The information provided should be verified through official sources before making any decisions.
-
-## 🆘 Support
-
-- **Issues:** [GitHub Issues](https://github.com/yourusername/war-tracker-2.0/issues)
-- **Discussions:** [GitHub Discussions](https://github.com/yourusername/war-tracker-2.0/discussions)
-- **Documentation:** [Wiki](https://github.com/yourusername/war-tracker-2.0/wiki)
+The system is now functional with real RSS data replacing the mock events!
 
 ---
 
