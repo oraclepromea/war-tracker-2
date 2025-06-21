@@ -1,15 +1,16 @@
 import { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { 
-  Filter, 
-  Calendar, 
+  AlertTriangle, 
   MapPin, 
-  AlertTriangle,
-  ExternalLink,
-  RefreshCw
+  Clock, 
+  Users,
+  Wifi,
+  WifiOff,
+  ExternalLink
 } from 'lucide-react';
+import { useWebSocket } from '../hooks/useWebSocket';
 
 interface WarEvent {
   id: string;
@@ -18,33 +19,24 @@ interface WarEvent {
   timestamp: string;
   location: string;
   severity: 'critical' | 'high' | 'medium' | 'low';
-  category: string;
   type: string;
   source: string;
+  verified: boolean;
+  date: string; // Add missing date property
+  coordinates?: [number, number];
   casualties?: {
     confirmed: number;
     estimated: number;
   };
-  weaponsUsed?: string[];
-  coordinates?: [number, number];
-  verified: boolean;
-  imageUrl?: string;
 }
 
-interface WarEventsProps {
-  events?: WarEvent[];
-  onEventSelect?: (event: WarEvent) => void;
-  onEventFilter?: (filter: string) => void;
-}
-
-export function WarEvents({ events }: WarEventsProps) {
+export function WarEvents() {
+  const { events, isConnected, connectionStatus } = useWebSocket();
   const [filteredEvents, setFilteredEvents] = useState<WarEvent[]>([]);
-  const [sortBy, setSortBy] = useState('timestamp');
-  const [isLoading, setIsLoading] = useState(false);
-  const [selectedEvent, setSelectedEvent] = useState<WarEvent | null>(null);
-  const [filterType, setFilterType] = useState('all');
-  const [filterRegion, setFilterRegion] = useState('all');
-  const [allEvents, setAllEvents] = useState<WarEvent[]>([]);
+  const [severityFilter, setSeverityFilter] = useState<string>('all');
+  const [locationFilter, setLocationFilter] = useState<string>('all');
+  const [expandedEvent, setExpandedEvent] = useState<string | null>(null);
+  const [sortBy, setSortBy] = useState<'timestamp' | 'severity'>('timestamp');
 
   const getSeverityColor = (severity: WarEvent['severity']) => {
     const colors = {
@@ -74,35 +66,40 @@ export function WarEvents({ events }: WarEventsProps) {
       const source = sources[Math.floor(Math.random() * sources.length)];
 
       // Generate contextual events based on location
-      const getEventDetails = (loc: string, eventType: string) => {
+      const getEventDetails = (loc: string, eventType: string): {
+        title: string;
+        description: string;
+        severity: 'critical' | 'high' | 'medium' | 'low';
+        category: string;
+      } => {
         if (loc.includes('Gaza') || loc.includes('West Bank') || loc.includes('Lebanon')) {
           switch (eventType) {
             case 'airstrike':
               return {
                 title: `Israeli airstrikes target ${loc}`,
                 description: `Military operations continue in ${loc} with reported strikes on strategic targets. Casualties and damage assessment ongoing.`,
-                severity: Math.random() > 0.3 ? 'high' : 'critical' as const,
+                severity: Math.random() > 0.3 ? 'high' : 'critical',
                 category: 'military'
               };
             case 'missile_attack':
               return {
                 title: `Rocket fire from ${loc}`,
                 description: `Multiple rockets launched from ${loc} towards Israeli territory. Iron Dome systems activated.`,
-                severity: 'high' as const,
+                severity: 'high',
                 category: 'military'
               };
             case 'humanitarian':
               return {
                 title: `Humanitarian aid convoy enters ${loc}`,
                 description: `International aid convoy delivers medical supplies and food to civilian population in ${loc}.`,
-                severity: 'low' as const,
+                severity: 'low',
                 category: 'humanitarian'
               };
             default:
               return {
                 title: `Military activity in ${loc}`,
                 description: `Ongoing military operations reported in ${loc} region.`,
-                severity: 'medium' as const,
+                severity: 'medium',
                 category: 'military'
               };
           }
@@ -112,28 +109,28 @@ export function WarEvents({ events }: WarEventsProps) {
               return {
                 title: `Russian strikes hit ${loc}`,
                 description: `Ukrainian forces report Russian airstrikes targeting civilian and military infrastructure in ${loc}.`,
-                severity: Math.random() > 0.4 ? 'high' : 'critical' as const,
+                severity: Math.random() > 0.4 ? 'high' : 'critical',
                 category: 'military'
               };
             case 'ground_assault':
               return {
                 title: `Ground fighting intensifies near ${loc}`,
                 description: `Heavy fighting reported as Ukrainian forces defend positions near ${loc}. Artillery exchanges ongoing.`,
-                severity: 'high' as const,
+                severity: 'high',
                 category: 'military'
               };
             case 'diplomatic':
               return {
                 title: `International talks on ${loc} situation`,
                 description: `Diplomatic efforts continue to address the ongoing conflict affecting ${loc} region.`,
-                severity: 'low' as const,
+                severity: 'low',
                 category: 'diplomatic'
               };
             default:
               return {
                 title: `Military operations in ${loc}`,
                 description: `Active military operations continue in the ${loc} sector.`,
-                severity: 'medium' as const,
+                severity: 'medium',
                 category: 'military'
               };
           }
@@ -142,7 +139,7 @@ export function WarEvents({ events }: WarEventsProps) {
         return {
           title: `${type.replace('_', ' ')} in ${loc}`,
           description: `Military activity reported in ${loc}. Situation developing.`,
-          severity: 'medium' as const,
+          severity: 'medium',
           category: 'military'
         };
       };
@@ -152,108 +149,96 @@ export function WarEvents({ events }: WarEventsProps) {
       return {
         id: `event-${timestamp.getTime()}-${i}`,
         timestamp: timestamp.toISOString(),
+        date: timestamp.toISOString().split('T')[0], // Add missing date property
         title: details.title,
         description: details.description,
         location,
         type,
-        category: details.category,
-        severity: details.severity as WarEvent['severity'], // Type assertion to fix severity type
+        severity: details.severity,
         casualties: type === 'humanitarian' || type === 'diplomatic' ? undefined : {
           confirmed: Math.floor(Math.random() * 50),
           estimated: Math.floor(Math.random() * 100)
         },
         source,
         coordinates: [31.5 + (Math.random() - 0.5) * 10, 35.0 + (Math.random() - 0.5) * 15] as [number, number],
-        verified: Math.random() > 0.2,
-        weaponsUsed: type === 'airstrike' ? ['Fighter Jets', 'Missiles'] : undefined
+        verified: Math.random() > 0.2
       };
     }).sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
   };
 
   // Fetch events from API or generate mock data
   const fetchEvents = async () => {
-    setIsLoading(true);
+    // setIsLoading(true);
     try {
-      // Try to fetch from API first
       const response = await fetch('http://localhost:3001/api/events');
-      if (response.ok) {
-        const data = await response.json();
-        setAllEvents(data.events || []);
-      } else {
-        // Fallback to generated data
-        const mockEvents = generateCurrentEvents();
-        setAllEvents(mockEvents);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
+      const data = await response.json();
+      // setEvents(data);
+      setFilteredEvents(data);
     } catch (error) {
-      console.warn('API unavailable, using generated data:', error);
-      const mockEvents = generateCurrentEvents();
-      setAllEvents(mockEvents);
-    } finally {
-      setIsLoading(false);
-    }
+      console.warn('Failed to fetch events from server, using generated data:', error);
+      // Fallback to generated events
+      const generatedEvents = generateCurrentEvents();
+      // setEvents(generatedEvents);
+      setFilteredEvents(generatedEvents);
+    } 
+    // finally {
+    //   setIsLoading(false);
+    // }
   };
 
   // Auto-refresh events
   useEffect(() => {
     fetchEvents();
     
-    // Refresh every 2 minutes
-    const interval = setInterval(fetchEvents, 120000);
+    // Auto-refresh every 30 seconds
+    const interval = setInterval(fetchEvents, 30000);
+    
     return () => clearInterval(interval);
   }, []);
 
-  // Filter events based on props and local state
+  // Filter events based on WebSocket events and local state
   useEffect(() => {
-    // Use events prop if provided, otherwise use fetched events
-    const sourceEvents = events && events.length > 0 ? events : allEvents;
-    let filtered = sourceEvents;
-    
-    // Filter by event type
-    if (filterType !== 'all') {
-      filtered = filtered.filter(event => event.type === filterType);
+    if (!events) {
+      setFilteredEvents([]);
+      return;
     }
-    
-    // Filter by region/conflict zone
-    if (filterRegion !== 'all') {
-      filtered = filtered.filter(event => {
-        const location = event.location.toLowerCase();
-        switch (filterRegion) {
-          case 'middle_east':
-            return location.includes('gaza') || location.includes('west bank') || 
-                   location.includes('lebanon') || location.includes('syria') || 
-                   location.includes('iraq') || location.includes('yemen');
-          case 'ukraine':
-            return location.includes('ukraine') || location.includes('donetsk') || 
-                   location.includes('kharkiv') || location.includes('crimea') || 
-                   location.includes('bakhmut') || location.includes('zaporizhzhia');
-          case 'gaza_strip':
-            return location.includes('gaza');
-          case 'west_bank':
-            return location.includes('west bank');
-          case 'lebanon':
-            return location.includes('lebanon');
-          case 'ukraine_east':
-            return location.includes('donetsk') || location.includes('bakhmut');
-          case 'ukraine_north':
-            return location.includes('kharkiv') || location.includes('ukraine');
-          default:
-            return true;
-        }
-      });
+
+    let filtered = [...events];
+
+    // Apply severity filter
+    if (severityFilter !== 'all') {
+      filtered = filtered.filter(event => event.severity === severityFilter);
     }
-    
+
+    // Apply location filter
+    if (locationFilter !== 'all') {
+      filtered = filtered.filter(event => 
+        event.location.toLowerCase().includes(locationFilter.toLowerCase())
+      );
+    }
+
     // Sort events
     filtered.sort((a, b) => {
-      if (sortBy === 'date' || sortBy === 'timestamp') {
+      if (sortBy === 'timestamp') {
         return new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime();
       } else {
         const severityOrder = { critical: 4, high: 3, medium: 2, low: 1 };
         return severityOrder[b.severity] - severityOrder[a.severity];
       }
     });
-    
-    setFilteredEvents(filtered);
-  }, [events, allEvents, filterType, filterRegion, sortBy]);
+
+    // Add verified property to WebSocket events
+    const formattedEvents = filtered.map(event => ({
+      ...event,
+      verified: true,
+      date: event.date || new Date(event.timestamp).toISOString().split('T')[0]
+    }));
+
+    setFilteredEvents(formattedEvents);
+  }, [events, severityFilter, locationFilter, sortBy]);
 
   const formatTimeAgo = (timestamp: string) => {
     const diff = Date.now() - new Date(timestamp).getTime();
@@ -273,17 +258,46 @@ export function WarEvents({ events }: WarEventsProps) {
           War Events Timeline
         </h2>
         <div className="flex items-center space-x-3">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={fetchEvents}
-            disabled={isLoading}
-          >
-            <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
-            {isLoading ? 'Loading...' : 'Refresh'}
-          </Button>
+          {/* Connection Status */}
+          <div className="flex items-center space-x-2">
+            {isConnected ? (
+              <Wifi className="h-4 w-4 text-green-400" />
+            ) : (
+              <WifiOff className="h-4 w-4 text-red-400" />
+            )}
+            <span className={`text-sm font-mono ${
+              isConnected ? 'text-green-400' : 'text-red-400'
+            }`}>
+              {connectionStatus.toUpperCase()}
+            </span>
+          </div>
+          
           <div className="text-sm text-tactical-muted font-mono">
-            {filteredEvents.length} events • Last updated: {new Date().toLocaleTimeString()}
+            {filteredEvents.length} events • Real-time updates
+          </div>
+        </div>
+      </div>
+
+      {/* Real-time Status Bar */}
+      <div className="tactical-panel p-4 rounded neon-border">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-2">
+              <div className={`w-2 h-2 rounded-full ${
+                isConnected ? 'bg-green-400 animate-pulse' : 'bg-red-400'
+              }`} />
+              <span className={`font-mono text-sm ${
+                isConnected ? 'text-green-400' : 'text-red-400'
+              }`}>
+                {isConnected ? 'LIVE MONITORING' : 'CONNECTION LOST'}
+              </span>
+            </div>
+            <div className="text-tactical-muted text-sm">
+              Active Conflicts: <span className="text-neon-400">Gaza • Ukraine • Lebanon</span>
+            </div>
+          </div>
+          <div className="text-tactical-muted text-xs font-mono">
+            WebSocket Status: {connectionStatus}
           </div>
         </div>
       </div>
@@ -293,49 +307,48 @@ export function WarEvents({ events }: WarEventsProps) {
         <CardContent className="p-4">
           <div className="flex flex-wrap items-center gap-4">
             <div className="flex items-center space-x-2">
-              <Filter className="h-4 w-4 text-tactical-muted" />
               <span className="text-sm text-tactical-muted font-mono">EVENT TYPE:</span>
               <select
-                value={filterType}
-                onChange={(e) => setFilterType(e.target.value)}
+                value={severityFilter}
+                onChange={(e) => setSeverityFilter(e.target.value)}
                 className="bg-tactical-panel border border-tactical-border rounded px-3 py-1 text-sm text-tactical-text"
               >
-                <option value="all">All Events ({allEvents.length})</option>
-                <option value="airstrike">Airstrikes ({allEvents.filter(e => e.type === 'airstrike').length})</option>
-                <option value="ground_assault">Ground Assaults ({allEvents.filter(e => e.type === 'ground_assault').length})</option>
-                <option value="missile_attack">Missile Attacks ({allEvents.filter(e => e.type === 'missile_attack').length})</option>
-                <option value="diplomatic">Diplomatic ({allEvents.filter(e => e.type === 'diplomatic').length})</option>
-                <option value="humanitarian">Humanitarian ({allEvents.filter(e => e.type === 'humanitarian').length})</option>
+                <option value="all">All Events ({events?.length || 0})</option>
+                <option value="airstrike">Airstrikes ({events?.filter(e => e.type === 'airstrike').length || 0})</option>
+                <option value="ground_assault">Ground Assaults ({events?.filter(e => e.type === 'ground_assault').length || 0})</option>
+                <option value="missile_attack">Missile Attacks ({events?.filter(e => e.type === 'missile_attack').length || 0})</option>
+                <option value="diplomatic">Diplomatic ({events?.filter(e => e.type === 'diplomatic').length || 0})</option>
+                <option value="humanitarian">Humanitarian ({events?.filter(e => e.type === 'humanitarian').length || 0})</option>
               </select>
             </div>
             
             <div className="flex items-center space-x-2">
               <span className="text-sm text-tactical-muted font-mono">REGION:</span>
               <select
-                value={filterRegion}
-                onChange={(e) => setFilterRegion(e.target.value)}
+                value={locationFilter}
+                onChange={(e) => setLocationFilter(e.target.value)}
                 className="bg-tactical-panel border border-tactical-border rounded px-3 py-1 text-sm text-tactical-text"
               >
-                <option value="all">All Regions ({allEvents.length})</option>
-                <option value="middle_east">Middle East ({allEvents.filter(e => {
+                <option value="all">All Regions ({events?.length || 0})</option>
+                <option value="middle_east">Middle East ({events?.filter(e => {
                   const loc = e.location.toLowerCase();
                   return loc.includes('gaza') || loc.includes('west bank') || loc.includes('lebanon') || loc.includes('syria') || loc.includes('iraq') || loc.includes('yemen');
-                }).length})</option>
-                <option value="ukraine">Ukraine Theater ({allEvents.filter(e => {
+                }).length || 0})</option>
+                <option value="ukraine">Ukraine Theater ({events?.filter(e => {
                   const loc = e.location.toLowerCase();
                   return loc.includes('ukraine') || loc.includes('donetsk') || loc.includes('kharkiv') || loc.includes('crimea') || loc.includes('bakhmut') || loc.includes('zaporizhzhia');
-                }).length})</option>
-                <option value="gaza_strip">Gaza Strip ({allEvents.filter(e => e.location.toLowerCase().includes('gaza')).length})</option>
-                <option value="west_bank">West Bank ({allEvents.filter(e => e.location.toLowerCase().includes('west bank')).length})</option>
-                <option value="lebanon">Lebanon ({allEvents.filter(e => e.location.toLowerCase().includes('lebanon')).length})</option>
-                <option value="ukraine_east">Eastern Ukraine ({allEvents.filter(e => {
+                }).length || 0})</option>
+                <option value="gaza_strip">Gaza Strip ({events?.filter(e => e.location.toLowerCase().includes('gaza')).length || 0})</option>
+                <option value="west_bank">West Bank ({events?.filter(e => e.location.toLowerCase().includes('west bank')).length || 0})</option>
+                <option value="lebanon">Lebanon ({events?.filter(e => e.location.toLowerCase().includes('lebanon')).length || 0})</option>
+                <option value="ukraine_east">Eastern Ukraine ({events?.filter(e => {
                   const loc = e.location.toLowerCase();
                   return loc.includes('donetsk') || loc.includes('bakhmut');
-                }).length})</option>
-                <option value="ukraine_north">Northern Ukraine ({allEvents.filter(e => {
+                }).length || 0})</option>
+                <option value="ukraine_north">Northern Ukraine ({events?.filter(e => {
                   const loc = e.location.toLowerCase();
                   return loc.includes('kharkiv') || (loc.includes('ukraine') && !loc.includes('donetsk'));
-                }).length})</option>
+                }).length || 0})</option>
               </select>
             </div>
             
@@ -343,10 +356,10 @@ export function WarEvents({ events }: WarEventsProps) {
               <span className="text-sm text-tactical-muted font-mono">SORT:</span>
               <select
                 value={sortBy}
-                onChange={(e) => setSortBy(e.target.value as 'date' | 'severity')}
+                onChange={(e) => setSortBy(e.target.value as 'timestamp' | 'severity')}
                 className="bg-tactical-panel border border-tactical-border rounded px-3 py-1 text-sm text-tactical-text"
               >
-                <option value="date">Latest First</option>
+                <option value="timestamp">Latest First</option>
                 <option value="severity">Severity</option>
               </select>
             </div>
@@ -368,32 +381,14 @@ export function WarEvents({ events }: WarEventsProps) {
         </CardContent>
       </Card>
 
-      {/* Real-time Status Bar */}
-      <div className="tactical-panel p-4 rounded neon-border">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-4">
-            <div className="flex items-center space-x-2">
-              <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
-              <span className="text-green-400 font-mono text-sm">LIVE MONITORING</span>
-            </div>
-            <div className="text-tactical-muted text-sm">
-              Active Conflicts: <span className="text-neon-400">Gaza • Ukraine • Lebanon</span>
-            </div>
-          </div>
-          <div className="text-tactical-muted text-xs font-mono">
-            Next Update: {new Date(Date.now() + 120000).toLocaleTimeString()}
-          </div>
-        </div>
-      </div>
-
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Events List */}
         <div className="lg:col-span-2">
           <Card className="neon-border">
             <CardHeader>
               <CardTitle className="flex items-center space-x-2">
-                <Calendar className="h-5 w-5" />
-                <span>Recent Events</span>
+                <Clock className="h-5 w-5" />
+                <span>Live Events Stream</span>
                 <div className="ml-auto text-xs text-tactical-muted font-mono">
                   {filteredEvents.length} events
                 </div>
@@ -406,15 +401,15 @@ export function WarEvents({ events }: WarEventsProps) {
                     key={event.id}
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: index * 0.1 }}
+                    transition={{ delay: index * 0.05 }}
                     className={`tactical-panel p-4 rounded cursor-pointer transition-all border-l-4 ${
                       getSeverityColor(event.severity)
                     } ${
-                      selectedEvent?.id === event.id
+                      expandedEvent === event.id
                         ? 'bg-neon-950/30 border border-neon-400'
                         : 'hover:bg-tactical-bg'
                     }`}
-                    onClick={() => setSelectedEvent(event)}
+                    onClick={() => setExpandedEvent(expandedEvent === event.id ? null : event.id)}
                   >
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center space-x-2">
@@ -432,6 +427,12 @@ export function WarEvents({ events }: WarEventsProps) {
                       </div>
                       <div className="flex items-center space-x-2 text-xs text-tactical-muted">
                         <span>{formatTimeAgo(event.timestamp)}</span>
+                        {/* Real-time indicator for recent events */}
+                        {Date.now() - new Date(event.timestamp).getTime() < 60000 && (
+                          <span className="bg-red-500 text-white px-1 rounded text-xs animate-pulse">
+                            LIVE
+                          </span>
+                        )}
                       </div>
                     </div>
 
@@ -447,10 +448,16 @@ export function WarEvents({ events }: WarEventsProps) {
                     </p>
 
                     {event.casualties && (
-                      <div className="mt-2 flex items-center space-x-2">
-                        <span className="text-xs text-red-400 font-mono">
-                          CASUALTIES: {event.casualties.confirmed} confirmed, {event.casualties.estimated} estimated
+                      <div className="flex items-center gap-1">
+                        <Users className="h-4 w-4" />
+                        <span className="font-mono text-red-400">
+                          {event.casualties.confirmed || 0} confirmed, {event.casualties.estimated || 0} estimated
                         </span>
+                        <div className="text-xs text-tactical-muted">
+                          <span>Confirmed: {event.casualties.confirmed || 0}</span>
+                          <span className="mx-2">•</span>
+                          <span>Estimated: {event.casualties.estimated || 0}</span>
+                        </div>
                       </div>
                     )}
                   </motion.div>
@@ -475,7 +482,7 @@ export function WarEvents({ events }: WarEventsProps) {
                   EVENT TYPE
                 </div>
                 <div className="text-neon-400 font-tactical">
-                  {selectedEvent?.type}
+                  {expandedEvent ? filteredEvents.find(e => e.id === expandedEvent)?.type : ''}
                 </div>
               </div>
 
@@ -484,7 +491,7 @@ export function WarEvents({ events }: WarEventsProps) {
                   LOCATION
                 </div>
                 <div className="text-tactical-text text-sm">
-                  {selectedEvent?.location}
+                  {expandedEvent ? filteredEvents.find(e => e.id === expandedEvent)?.location : ''}
                 </div>
               </div>
 
@@ -493,7 +500,7 @@ export function WarEvents({ events }: WarEventsProps) {
                   TIMESTAMP
                 </div>
                 <div className="text-tactical-text text-sm font-mono">
-                  {selectedEvent ? new Date(selectedEvent.timestamp).toLocaleString() : ''}
+                  {expandedEvent ? new Date(filteredEvents.find(e => e.id === expandedEvent)!.timestamp).toLocaleString() : ''}
                 </div>
               </div>
 
@@ -503,30 +510,41 @@ export function WarEvents({ events }: WarEventsProps) {
                 </div>
                 <div
                   className={`font-tactical uppercase ${getSeverityColor(
-                    selectedEvent?.severity || 'medium'
+                    expandedEvent ? filteredEvents.find(e => e.id === expandedEvent)!.severity : 'medium'
                   ).split(' ')[0]?.replace('border-', 'text-')}`}
                 >
-                  {selectedEvent?.severity}
+                  {expandedEvent ? filteredEvents.find(e => e.id === expandedEvent)!.severity : ''}
                 </div>
               </div>
 
-              {selectedEvent?.casualties && (
-                <div className="tactical-panel p-3 rounded">
-                  <div className="text-tactical-muted text-xs font-mono mb-1">
-                    CASUALTIES
+              {expandedEvent && (() => {
+                const event = filteredEvents.find(e => e.id === expandedEvent);
+                if (!event?.casualties) return null;
+                
+                const { casualties } = event;
+                return (
+                  <div className="tactical-panel p-3 rounded">
+                    <div className="text-tactical-muted text-xs font-mono mb-1">
+                      CASUALTIES
+                    </div>
+                    <div className="text-red-400 font-tactical">
+                      {casualties.confirmed || 0} confirmed, {casualties.estimated || 0} estimated
+                    </div>
+                    <div className="text-xs text-tactical-muted">
+                      <span>Confirmed: {casualties.confirmed || 0}</span>
+                      <span className="mx-2">•</span>
+                      <span>Estimated: {casualties.estimated || 0}</span>
+                    </div>
                   </div>
-                  <div className="text-red-400 font-tactical">
-                    {selectedEvent.casualties.confirmed} confirmed, {selectedEvent.casualties.estimated} estimated
-                  </div>
-                </div>
-              )}
+                );
+              })()}
 
               <div className="tactical-panel p-3 rounded">
                 <div className="text-tactical-muted text-xs font-mono mb-1">
                   DESCRIPTION
                 </div>
                 <div className="text-tactical-text text-sm">
-                  {selectedEvent?.description}
+                  {expandedEvent ? filteredEvents.find(e => e.id === expandedEvent)?.description : ''}
                 </div>
               </div>
 
@@ -535,11 +553,11 @@ export function WarEvents({ events }: WarEventsProps) {
                   SOURCES
                 </div>
                 <div className="space-y-1">
-                  {selectedEvent?.source && (
+                  {expandedEvent && filteredEvents.find(e => e.id === expandedEvent)?.source && (
                     <div className="flex items-center space-x-2">
-                      <ExternalLink className="h-3 w-3 text-neon-400" />
+                      <ExternalLink className="h-4 w-4" />
                       <span className="text-neon-400 text-sm cursor-pointer hover:underline">
-                        {selectedEvent.source}
+                        {filteredEvents.find(e => e.id === expandedEvent)!.source}
                       </span>
                     </div>
                   )}
@@ -551,7 +569,10 @@ export function WarEvents({ events }: WarEventsProps) {
                   COORDINATES
                 </div>
                 <div className="text-tactical-text text-sm font-mono">
-                  {selectedEvent?.coordinates ? `${selectedEvent.coordinates[0]}, ${selectedEvent.coordinates[1]}` : 'Unknown'}
+                  {expandedEvent && filteredEvents.find(e => e.id === expandedEvent)?.coordinates ? 
+                    `${filteredEvents.find(e => e.id === expandedEvent)?.coordinates?.[0]}, ${filteredEvents.find(e => e.id === expandedEvent)?.coordinates?.[1]}` : 
+                    'Unknown'
+                  }
                 </div>
               </div>
             </CardContent>
