@@ -2,33 +2,36 @@ import { useState } from 'react';
 import { Navigation } from '@/components/Navigation';
 import { Dashboard } from '@/components/Dashboard';
 import { WarEvents } from '@/components/WarEvents';
+import { LiveNews } from '@/components/LiveNews';
 import { CountriesAndForces } from '@/components/CountriesAndForces';
-import { Settings } from '@/components/Settings';
+import Settings from '@/components/Settings';
 import { DebugConsole } from '@/components/DebugConsole';
 import { BattleMaps } from '@/components/BattleMaps';
+import WarNews from './pages/WarNews';
 import { motion, AnimatePresence } from 'framer-motion';
 import './index.css';
 
 function App() {
-  const [activeTab, setActiveTab] = useState('dashboard');
+  const [activeTab, setActiveTab] = useState('Dashboard');
+
+  const tabs = [
+    { name: 'Dashboard', icon: '🏠', component: Dashboard },
+    { name: 'Events', icon: '📅', component: WarEvents },
+    { name: 'Live News', icon: '📰', component: LiveNews },
+    { name: 'Maps', icon: '🗺️', component: BattleMaps },
+    { name: 'Countries', icon: '🌍', component: CountriesAndForces },
+    { name: 'Settings', icon: '⚙️', component: Settings },
+    { name: 'Debug', icon: '🐞', component: DebugConsole },
+    { name: 'War News', icon: '🎯', component: WarNews },
+  ];
 
   const renderActiveTab = () => {
-    switch (activeTab) {
-      case 'dashboard':
-        return <Dashboard />;
-      case 'events':
-        return <WarEvents />;
-      case 'maps':
-        return <BattleMaps />;
-      case 'countries':
-        return <CountriesAndForces />;
-      case 'settings':
-        return <Settings />;
-      case 'debug':
-        return <DebugConsole />;
-      default:
-        return <Dashboard />;
+    const activeTabObject = tabs.find(tab => tab.name === activeTab);
+    if (activeTabObject) {
+      const Component = activeTabObject.component;
+      return <Component />;
     }
+    return <Dashboard />;
   };
 
   return (
@@ -48,7 +51,7 @@ function App() {
         }}
       />
 
-      <Navigation activeTab={activeTab} onTabChange={setActiveTab} />
+      <Navigation activeTab={activeTab} onTabChange={setActiveTab} tabs={tabs} />
       
       <main className="relative z-10">
         <AnimatePresence mode="wait">

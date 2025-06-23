@@ -1,7 +1,12 @@
 import express from 'express';
 import cors from 'cors';
+import { EnhancedDataSourceManager } from './services/enhancedDataSources';
+import { RSSService } from './services/rssService';
 
 const app = express();
+
+// Initialize services
+const dataSourceManager = EnhancedDataSourceManager.getInstance();
 
 // Middleware
 app.use(cors());
@@ -60,6 +65,7 @@ app.get('/api/health', async (req, res) => {
     
     res.json(healthCheck);
   } catch (error) {
+    console.error('Health check error:', error instanceof Error ? error.message : String(error));
     res.status(500).json({
       status: 'ERROR',
       error: error instanceof Error ? error.message : String(error),
@@ -124,7 +130,7 @@ app.get('/api/feeds/test', async (req, res) => {
           url: feed.url,
           status: 'error',
           responseTime,
-          error: error.message,
+          error: error instanceof Error ? error.message : String(error),
           lastChecked: new Date().toISOString()
         };
       }
@@ -177,74 +183,142 @@ app.post('/api/jobs/news', async (req, res) => {
   } catch (error) {
     res.status(500).json({
       status: 'failed',
-      error: error.message,
+      error: error instanceof Error ? error.message : String(error),
       timestamp: new Date().toISOString()
     });
   }
 });
 
-// Events endpoint with mock data
-app.get('/api/events', async (req, res) => {
-  try {
-    // Generate mock events for testing
-    const mockEvents = Array.from({ length: 25 }, (_, i) => {
-      const timestamp = new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000);
-      const types = ['airstrike', 'ground_assault', 'missile_attack', 'diplomatic', 'humanitarian'];
-      const locations = ['Gaza Strip', 'West Bank', 'Ukraine', 'Donetsk', 'Lebanon'];
-      const severities = ['low', 'medium', 'high', 'critical'];
-      
-      return {
-        id: `event-${i}`,
-        timestamp: timestamp.toISOString(),
-        title: `Event ${i + 1}`,
-        description: `Description for event ${i + 1}`,
-        location: locations[Math.floor(Math.random() * locations.length)],
-        type: types[Math.floor(Math.random() * types.length)],
-        severity: severities[Math.floor(Math.random() * severities.length)],
-        source: 'Mock Data',
-        verified: Math.random() > 0.3
-      };
-    });
+// Mount the events router
+app.use('/api/events', require('./routes/events.ts').default);
 
-    res.json({
-      events: mockEvents.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()),
-      meta: {
-        total: mockEvents.length,
-        lastUpdate: new Date().toISOString()
-      }
-    });
-  } catch (error) {
-    res.status(500).json({
-      error: error.message,
-      timestamp: new Date().toISOString()
-    });
-  }
-});
-
-// News items endpoint
+// News endpoint - unified and fixed
 app.get('/api/news', async (req, res) => {
   try {
-    const mockNews = Array.from({ length: 30 }, (_, i) => ({
-      id: `news-${i}`,
-      title: `Breaking News Item ${i + 1}`,
-      summary: `Summary for news item ${i + 1}`,
-      source: ['Reuters', 'BBC', 'Al Jazeera'][Math.floor(Math.random() * 3)],
-      publishedAt: new Date(Date.now() - Math.random() * 24 * 60 * 60 * 1000).toISOString(),
-      url: `https://example.com/news/${i}`,
-      category: ['conflict', 'diplomacy', 'humanitarian'][Math.floor(Math.random() * 3)]
-    }));
-
-    res.json({
-      news: mockNews.sort((a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime()),
-      meta: {
-        total: mockNews.length,
-        lastUpdate: new Date().toISOString()
+    console.log('📰 News endpoint called');
+    console.log('📰 Request headers:', req.headers);
+    console.log('📰 Request URL:', req.url);
+    
+    // Try to get news from enhanced data sources first
+    console.log('📰 Attempting to fetch from dataSourceManager...');
+    const realNews = await dataSourceManager.fetchAllSources();
+    console.log('📰 dataSourceManager result:', realNews);
+    console.log('📰 dataSourceManager result type:', typeof realNews);
+    console.log('📰 dataSourceManager result length:', realNews?.length);
+    
+    if (realNews && realNews.length > 0) {
+      // Transform events to news format for compatibility
+      const newsItems = realNews.map(event => ({
+        id: event.id,
+        title: event.title,
+        description: event.description,
+        url: event.link || '#',
+        publishedAt: event.timestamp,
+        source: { name: event.source }
+      }));
+      
+      console.log(`✅ Returning ${newsItems.length} real news articles`);
+      console.log('📋 Sample article:', newsItems[0]);
+      return res.json(newsItems);
+    }
+    
+    // Fallback to RSS service
+    console.log('📰 Falling back to RSS service...');
+    try {
+      const rssService = new RSSService();
+      console.log('📰 RSSService created');
+      const rssArticles = await rssService.getAllNews();
+      console.log('📰 RSS service result:', rssArticles);
+      console.log('📰 RSS service result type:', typeof rssArticles);
+      console.log('📰 RSS service result length:', rssArticles?.length);
+      
+      if (rssArticles && rssArticles.length > 0) {
+        console.log(`✅ Returning ${rssArticles.length} RSS articles`);
+        console.log('📋 Sample RSS article:', rssArticles[0]);
+        return res.json(rssArticles);
       }
-    });
+    } catch (rssError) {
+      console.error('RSS aggregation failed:', rssError instanceof Error ? rssError.message : String(rssError));
+      res.status(500).json({ 
+        error: 'RSS aggregation failed', 
+        details: rssError instanceof Error ? rssError.message : String(rssError)
+      });
+    }
+    
+    // Final fallback: return mock news data
+    console.log('📰 Using mock data fallback');
+    const mockNews = [
+      {
+        id: '1',
+        title: 'International Diplomatic Progress',
+        description: 'Recent diplomatic efforts show promising developments in ongoing negotiations.',
+        url: '#',
+        publishedAt: new Date().toISOString(),
+        source: { name: 'War Tracker Intelligence' }
+      },
+      {
+        id: '2',
+        title: 'Humanitarian Aid Coordination',
+        description: 'International organizations coordinate relief efforts for affected populations.',
+        url: '#',
+        publishedAt: new Date(Date.now() - 3600000).toISOString(),
+        source: { name: 'Relief Monitor' }
+      },
+      {
+        id: '3',
+        title: 'Regional Security Update',
+        description: 'Security assessment shows continued monitoring of regional developments.',
+        url: '#',
+        publishedAt: new Date(Date.now() - 7200000).toISOString(),
+        source: { name: 'Security Brief' }
+      }
+    ];
+    
+    console.log('📰 Returning mock news data');
+    console.log('📋 Mock data sample:', mockNews[0]);
+    res.json(mockNews);
+    
   } catch (error) {
-    res.status(500).json({
-      error: error.message,
-      timestamp: new Date().toISOString()
+    console.error('❌ News endpoint error:', error instanceof Error ? error.message : String(error));
+    console.error('❌ News endpoint error stack:', error instanceof Error ? error.stack : 'No stack');
+    res.status(500).json({ 
+      error: 'Failed to fetch news', 
+      details: error instanceof Error ? error.message : String(error)
+    });
+  }
+});
+
+// Live articles endpoint for the Live component
+app.get('/api/live/articles', async (req, res) => {
+  try {
+    console.log('🔴 Live articles endpoint called');
+    
+    // Fetch real articles from RSS sources
+    const realEvents = await dataSourceManager.fetchAllSources();
+    
+    // Transform events to article format expected by Live component
+    const articles = realEvents.map(event => ({
+      id: event.id,
+      title: event.title,
+      description: event.description,
+      url: event.link || '#',
+      publishedAt: event.timestamp,
+      source: {
+        name: event.source,
+        reliability: 85, // Default reliability
+        icon: '📰' // Default icon
+      },
+      category: 'news'
+    }));
+    
+    console.log(`✅ Live: Returning ${articles.length} articles`);
+    res.json(articles);
+    
+  } catch (error) {
+    console.error('❌ Live articles error:', error);
+    res.status(500).json({ 
+      error: 'Failed to fetch live articles',
+      details: error instanceof Error ? error.message : String(error)
     });
   }
 });

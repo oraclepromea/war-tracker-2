@@ -1,67 +1,27 @@
 {
-  "name": "war-tracker-2.0",
-  "version": "2.0.0",
-  "description": "Real-time military conflict tracking system with AI-powered analysis",
-  "main": "server/dist/index.js",
+  "name": "war-tracker",
+  "version": "0.1.0",
+  "private": true,
   "scripts": {
-    "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\"",
-    "dev:server": "cd server && npm run dev",
-    "dev:client": "cd client && npm run dev",
-    "build": "npm run build:client && npm run build:server",
-    "build:client": "cd client && npm run build",
-    "build:server": "cd server && npm run build",
-    "start": "cd server && npm start",
-    "test": "npm run test:server && npm run test:client",
-    "test:server": "cd server && npm test",
-    "test:client": "cd client && npm test",
-    "lint": "npm run lint:server && npm run lint:client",
-    "lint:server": "cd server && npm run lint",
-    "lint:client": "cd client && npm run lint",
-    "docker:build": "docker build -t war-tracker:latest .",
-    "docker:run": "docker-compose up -d",
-    "docker:stop": "docker-compose down",
-    "docker:logs": "docker-compose logs -f",
-    "setup": "npm install && cd client && npm install && cd ../server && npm install",
-    "clean": "rm -rf node_modules client/node_modules server/node_modules client/dist server/dist"
-  },
-  "keywords": [
-    "military",
-    "conflict-tracking",
-    "real-time",
-    "ai-analysis",
-    "middle-east",
-    "news-aggregation",
-    "websocket",
-    "react",
-    "node.js",
-    "mongodb"
-  ],
-  "author": "War Tracker Team",
-  "license": "MIT",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/yourusername/war-tracker-2.0.git"
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
   },
   "dependencies": {
-    "axios": "^1.6.2",
-    "bull": "^4.12.0",
-    "clsx": "^2.1.1",
-    "express-rate-limit": "^7.1.5",
-    "express-validator": "^7.0.1",
-    "ioredis": "^5.3.2",
-    "node-cron": "^3.0.3",
-    "pg": "^8.11.3",
-    "rss-parser": "^3.13.0",
-    "tailwind-merge": "^3.3.1",
-    "typeorm": "^0.3.17"
+    "@supabase/supabase-js": "^2.39.0",
+    "@types/express": "^5.0.3",
+    "date-fns": "^4.1.0",
+    "express": "^5.1.0",
+    "next": "14.0.0",
+    "react": "^18",
+    "react-dom": "^18"
   },
   "devDependencies": {
-    "@types/node-cron": "^3.0.11",
-    "@types/pg": "^8.10.9",
-    "concurrently": "^8.2.2"
-  },
-  "engines": {
-    "node": ">=18.0.0",
-    "npm": ">=8.0.0"
+    "@types/node": "^20",
+    "@types/react": "^18",
+    "@types/react-dom": "^18",
+    "typescript": "^5",
+    "vite": "^6.3.5"
   }
 }

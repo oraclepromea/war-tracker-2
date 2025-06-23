@@ -16,6 +16,7 @@ import {
   Target,
   Shield
 } from 'lucide-react';
+import LiveEventsFeed from './LiveEventsFeed';
 
 interface WarEvent {
   id: string;
@@ -44,6 +45,9 @@ interface DashboardStats {
     change: number;
   }[];
 }
+
+// Fix API base URL to use environment variable
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
 export function Dashboard() {
   const [events, setEvents] = useState<WarEvent[]>([]);
@@ -173,9 +177,12 @@ export function Dashboard() {
   };
 
   const fetchEvents = async () => {
-    setIsLoading(true);
     try {
-      const response = await fetch('http://localhost:3001/api/events');
+      setIsLoading(true);
+      
+      // Fix: Use correct API URL
+      const response = await fetch(`${API_BASE_URL}/api/events`);
+      
       let fetchedEvents: WarEvent[] = [];
       
       if (response.ok) {
@@ -389,14 +396,19 @@ export function Dashboard() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Recent Events Feed */}
+        {/* Live Events Feed - Real RSS Data */}
+        <div className="lg:col-span-1">
+          <LiveEventsFeed />
+        </div>
+
+        {/* Recent Events Feed - Dashboard Data */}
         <div className="lg:col-span-2">
           <Card className="neon-border">
             <CardHeader>
               <CardTitle className="flex items-center justify-between">
                 <div className="flex items-center space-x-2">
                   <Zap className="h-5 w-5 text-neon-400" />
-                  <span>Live Events Feed</span>
+                  <span>Recent Events</span>
                 </div>
                 <Badge variant="outline" className="text-neon-400 border-neon-400">
                   {recentEvents.length} events
@@ -479,124 +491,124 @@ export function Dashboard() {
             </CardContent>
           </Card>
         </div>
+      </div>
 
-        {/* Sidebar - Trends & Quick Stats */}
-        <div className="space-y-6">
-          {/* Regional Activity */}
-          <Card className="neon-border">
-            <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
-                <Target className="h-5 w-5 text-orange-400" />
-                <span>Regional Activity</span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {[...new Set(events.map(e => e.location))].slice(0, 5).map((location) => {
-                  const locationEvents = events.filter(e => e.location === location);
-                  const criticalCount = locationEvents.filter(e => e.severity === 'critical').length;
-                  
-                  return (
-                    <div key={location} className="tactical-panel p-3 rounded">
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="text-sm text-tactical-text font-medium">
-                          {location}
-                        </span>
-                        <Badge variant="outline" className="text-xs">
-                          {locationEvents.length}
-                        </Badge>
-                      </div>
-                      <div className="flex items-center space-x-2 text-xs text-tactical-muted">
-                        <span>{criticalCount} critical</span>
-                        <span>•</span>
-                        <span>Last: {formatTimeAgo(locationEvents[0]?.timestamp || '')}</span>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Event Types */}
-          <Card className="neon-border">
-            <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
-                <Calendar className="h-5 w-5 text-blue-400" />
-                <span>Event Categories</span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {[...new Set(events.map(e => e.type))].slice(0, 5).map((type) => {
-                  const typeEvents = events.filter(e => e.type === type);
-                  const percentage = Math.round((typeEvents.length / events.length) * 100) || 0;
-                  
-                  return (
-                    <div key={type} className="tactical-panel p-3 rounded">
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-sm text-tactical-text capitalize">
-                          {type.replace('_', ' ')}
-                        </span>
-                        <span className="text-xs text-neon-400 font-mono">
-                          {percentage}%
-                        </span>
-                      </div>
-                      <div className="w-full bg-tactical-border rounded-full h-2">
-                        <div 
-                          className="bg-neon-400 h-2 rounded-full transition-all duration-500"
-                          style={{ width: `${percentage}%` }}
-                        />
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* System Status */}
-          <Card className="neon-border">
-            <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
-                <Shield className="h-5 w-5 text-green-400" />
-                <span>System Status</span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                <div className="tactical-panel p-3 rounded">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-tactical-text">API Status</span>
-                    <div className="flex items-center space-x-2">
-                      <div className="w-2 h-2 bg-green-400 rounded-full" />
-                      <span className="text-xs text-green-400">Online</span>
-                    </div>
-                  </div>
-                </div>
+      {/* Sidebar - Trends & Quick Stats */}
+      <div className="space-y-6">
+        {/* Regional Activity */}
+        <Card className="neon-border">
+          <CardHeader>
+            <CardTitle className="flex items-center space-x-2">
+              <Target className="h-5 w-5 text-orange-400" />
+              <span>Regional Activity</span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {[...new Set(events.map(e => e.location))].slice(0, 5).map((location) => {
+                const locationEvents = events.filter(e => e.location === location);
+                const criticalCount = locationEvents.filter(e => e.severity === 'critical').length;
                 
-                <div className="tactical-panel p-3 rounded">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-tactical-text">Data Sources</span>
-                    <div className="flex items-center space-x-2">
-                      <div className="w-2 h-2 bg-green-400 rounded-full" />
-                      <span className="text-xs text-green-400">{stats.activeSources} Active</span>
+                return (
+                  <div key={location} className="tactical-panel p-3 rounded">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-sm text-tactical-text font-medium">
+                        {location}
+                      </span>
+                      <Badge variant="outline" className="text-xs">
+                        {locationEvents.length}
+                      </Badge>
+                    </div>
+                    <div className="flex items-center space-x-2 text-xs text-tactical-muted">
+                      <span>{criticalCount} critical</span>
+                      <span>•</span>
+                      <span>Last: {formatTimeAgo(locationEvents[0]?.timestamp || '')}</span>
                     </div>
                   </div>
-                </div>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Event Types */}
+        <Card className="neon-border">
+          <CardHeader>
+            <CardTitle className="flex items-center space-x-2">
+              <Calendar className="h-5 w-5 text-blue-400" />
+              <span>Event Categories</span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {[...new Set(events.map(e => e.type))].slice(0, 5).map((type) => {
+                const typeEvents = events.filter(e => e.type === type);
+                const percentage = Math.round((typeEvents.length / events.length) * 100) || 0;
                 
-                <div className="tactical-panel p-3 rounded">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-tactical-text">Last Sync</span>
-                    <span className="text-xs text-tactical-muted font-mono">
-                      {formatTimeAgo(stats.lastUpdate)}
-                    </span>
+                return (
+                  <div key={type} className="tactical-panel p-3 rounded">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm text-tactical-text capitalize">
+                        {type.replace('_', ' ')}
+                      </span>
+                      <span className="text-xs text-neon-400 font-mono">
+                        {percentage}%
+                      </span>
+                    </div>
+                    <div className="w-full bg-tactical-border rounded-full h-2">
+                      <div 
+                        className="bg-neon-400 h-2 rounded-full transition-all duration-500"
+                        style={{ width: `${percentage}%` }}
+                      />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* System Status */}
+        <Card className="neon-border">
+          <CardHeader>
+            <CardTitle className="flex items-center space-x-2">
+              <Shield className="h-5 w-5 text-green-400" />
+              <span>System Status</span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              <div className="tactical-panel p-3 rounded">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-tactical-text">API Status</span>
+                  <div className="flex items-center space-x-2">
+                    <div className="w-2 h-2 bg-green-400 rounded-full" />
+                    <span className="text-xs text-green-400">Online</span>
                   </div>
                 </div>
               </div>
-            </CardContent>
-          </Card>
-        </div>
+              
+              <div className="tactical-panel p-3 rounded">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-tactical-text">Data Sources</span>
+                  <div className="flex items-center space-x-2">
+                    <div className="w-2 h-2 bg-green-400 rounded-full" />
+                    <span className="text-xs text-green-400">{stats.activeSources} Active</span>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="tactical-panel p-3 rounded">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-tactical-text">Last Sync</span>
+                  <span className="text-xs text-tactical-muted font-mono">
+                    {formatTimeAgo(stats.lastUpdate)}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

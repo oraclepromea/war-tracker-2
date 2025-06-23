@@ -10,6 +10,19 @@ import { NewsItem } from '../models/NewsItem';
 
 dotenv.config();
 
+const validateEnvVars = () => {
+  const required = ['DB_HOST', 'DB_PORT', 'DB_USERNAME', 'DB_PASSWORD', 'DB_NAME'];
+  const missing = required.filter(key => !process.env[key]);
+  
+  if (missing.length > 0) {
+    console.error(`❌ Missing required environment variables: ${missing.join(', ')}`);
+    console.log('💡 Create a .env file in the server directory with these variables');
+    process.exit(1);
+  }
+};
+
+validateEnvVars();
+
 export const AppDataSource = new DataSource({
   type: 'postgres',
   host: process.env.DB_HOST || 'localhost',

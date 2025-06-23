@@ -1,0 +1,24 @@
+# Railway.toml - Railway deployment configuration
+
+[build]
+  # Build command (Railway will run npm install automatically)
+  buildCommand = "npm install"
+
+[deploy]
+  # Start command for the application
+  startCommand = "npm start"
+  # Health check path
+  healthcheckPath = "/api/health"
+  # Health check timeout
+  healthcheckTimeout = 300
+  # Restart policy
+  restartPolicyType = "on_failure"
+  restartPolicyMaxRetries = 10
+
+[variables]
+  # Node.js version
+  NODE_VERSION = "18"
+  # Production environment
+  NODE_ENV = "production"
+  # Port will be set by Railway automatically
+  PORT = "$PORT"

@@ -174,7 +174,7 @@ export class WikipediaImageService {
       'Babur': 'Babur cruise missile',
       'SAAD APC': 'SAAD armored personnel carrier',
       'M113A2': 'M113 armored personnel carrier',
-      'Sinpo-class': 'Sinpo-class submarine',
+      'Sinpo-class': 'Submarine',
       'Najin-class': 'Najin-class frigate',
       'Hwasong-17': 'Hwasong-17',
       'KN-23': 'Hwasong-11A',

@@ -12,6 +12,12 @@ export const errorHandler = (
   res: Response,
   next: NextFunction
 ): void => {
+  console.error('💥 Unhandled error:', error);
+
+  if (res.headersSent) {
+    return next(error);
+  }
+
   const statusCode = error.statusCode || 500;
   const message = error.message || 'Internal Server Error';
 
@@ -26,7 +32,12 @@ export const errorHandler = (
 
   res.status(statusCode).json({
     success: false,
-    error: message,
+    error: process.env.NODE_ENV === 'development' ? message : 'Internal server error',
     ...(process.env.NODE_ENV === 'development' && { stack: error.stack })
   });
+};
+
+// Add async error wrapper
+export const asyncHandler = (fn: Function) => (req: any, res: any, next: any) => {
+  Promise.resolve(fn(req, res, next)).catch(next);
 };

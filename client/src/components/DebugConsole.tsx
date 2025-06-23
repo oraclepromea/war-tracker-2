@@ -12,6 +12,8 @@ import {
   ChevronDown,
   ChevronUp
 } from 'lucide-react';
+// Fix: Remove vite-env import and use direct environment variable
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
 interface LogEntry {
   id: string;
@@ -59,7 +61,7 @@ export function DebugConsole() {
   // System health check
   const checkSystemHealth = async () => {
     try {
-      const response = await fetch('http://localhost:3001/api/health');
+      const response = await fetch(`${API_BASE_URL}/api/health`);
       const data = await response.json();
       setSystemStatus(data);
       
@@ -139,7 +141,7 @@ export function DebugConsole() {
     const results: Record<string, ApiTestResponse> = {};
 
     for (const endpoint of endpoints) {
-      const startTime = Date.now(); // Declare startTime here
+      const startTime = Date.now();
       try {
         addLog({
           type: 'request',
@@ -147,7 +149,7 @@ export function DebugConsole() {
           endpoint: endpoint.path
         });
 
-        const response = await fetch(`http://localhost:3001${endpoint.path}`, {
+        const response = await fetch(`${API_BASE_URL}${endpoint.path}`, {
           method: endpoint.method
         });
         const responseTime = Date.now() - startTime;

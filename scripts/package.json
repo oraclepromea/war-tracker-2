@@ -1,0 +1,19 @@
+{
+  "name": "war-tracker-rss-fetcher",
+  "version": "1.0.0",
+  "description": "RSS feed aggregator for War Tracker 2.0",
+  "main": "rss-fetcher.js",
+  "scripts": {
+    "start": "node rss-fetcher.js",
+    "fetch": "node rss-fetcher.js",
+    "test": "node -e \"console.log('Testing RSS fetcher...'); require('./rss-fetcher.js').fetchRSSFeed({name: 'Test', url: 'https://feeds.bbci.co.uk/news/world/rss.xml'}).then(console.log);\""
+  },
+  "dependencies": {
+    "rss-parser": "^3.13.0",
+    "@supabase/supabase-js": "^2.39.0",
+    "dotenv": "^16.3.1"
+  },
+  "keywords": ["rss", "news", "aggregator", "supabase"],
+  "author": "War Tracker Team",
+  "license": "MIT"
+}

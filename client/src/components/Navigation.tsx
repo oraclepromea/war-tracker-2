@@ -1,30 +1,20 @@
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { 
-  LayoutDashboard, 
-  Crosshair, 
-  Shield, 
-  Settings, 
-  Bug,
-  Activity,
-  Map as MapIcon
+  Activity
 } from 'lucide-react';
 
 interface NavigationProps {
   activeTab: string;
   onTabChange: (tab: string) => void;
+  tabs: Array<{
+    name: string;
+    icon: string;
+    component: React.ComponentType;
+  }>;
 }
 
-const tabs = [
-  { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { id: 'events', label: 'War Events', icon: Crosshair },
-  { id: 'maps', label: 'Battle Maps', icon: MapIcon },
-  { id: 'countries', label: 'Countries & Forces', icon: Shield },
-  { id: 'settings', label: 'Settings', icon: Settings },
-  { id: 'debug', label: 'Debug', icon: Bug },
-];
-
-export function Navigation({ activeTab, onTabChange }: NavigationProps) {
+export function Navigation({ activeTab, onTabChange, tabs }: NavigationProps) {
   return (
     <nav className="tactical-panel border-b border-tactical-border">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -41,22 +31,21 @@ export function Navigation({ activeTab, onTabChange }: NavigationProps) {
           
           <div className="flex space-x-1">
             {tabs.map((tab) => {
-              const Icon = tab.icon;
-              const isActive = activeTab === tab.id;
+              const isActive = activeTab === tab.name;
               
               return (
                 <Button
-                  key={tab.id}
+                  key={tab.name}
                   variant={isActive ? "neon" : "ghost"}
                   size="sm"
-                  onClick={() => onTabChange(tab.id)}
+                  onClick={() => onTabChange(tab.name)}
                   className={cn(
                     "flex items-center space-x-2 font-mono text-xs",
                     isActive && "active-tab"
                   )}
                 >
-                  <Icon className="h-4 w-4" />
-                  <span>{tab.label}</span>
+                  <span>{tab.icon}</span>
+                  <span>{tab.name}</span>
                 </Button>
               );
             })}

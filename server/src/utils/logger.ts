@@ -1,33 +1,22 @@
-interface LogLevel {
-  ERROR: 'error';
-  WARN: 'warn';
-  INFO: 'info';
-  DEBUG: 'debug';
+// Simple console logger fallback if winston is not available
+interface Logger {
+  info: (message: string, meta?: any) => void;
+  error: (message: string, meta?: any) => void;
+  warn: (message: string, meta?: any) => void;
+  debug: (message: string, meta?: any) => void;
 }
 
-const LOG_LEVELS: LogLevel = {
-  ERROR: 'error',
-  WARN: 'warn',
-  INFO: 'info',
-  DEBUG: 'debug'
-};
-
-export const logger = {
-  info: (message: string, ...args: any[]) => {
-    console.log(`[INFO] ${new Date().toISOString()} - ${message}`, ...args);
+export const logger: Logger = {
+  info: (message: string, meta?: any) => {
+    console.log(`[INFO] ${message}`, meta || '');
   },
-  
-  error: (message: string, error?: any) => {
-    console.error(`[ERROR] ${new Date().toISOString()} - ${message}`, error);
+  error: (message: string, meta?: any) => {
+    console.error(`[ERROR] ${message}`, meta || '');
   },
-  
-  warn: (message: string, ...args: any[]) => {
-    console.warn(`[WARN] ${new Date().toISOString()} - ${message}`, ...args);
+  warn: (message: string, meta?: any) => {
+    console.warn(`[WARN] ${message}`, meta || '');
   },
-  
-  debug: (message: string, ...args: any[]) => {
-    if (process.env.NODE_ENV === 'development') {
-      console.debug(`[DEBUG] ${new Date().toISOString()} - ${message}`, ...args);
-    }
+  debug: (message: string, meta?: any) => {
+    console.log(`[DEBUG] ${message}`, meta || '');
   }
 };
