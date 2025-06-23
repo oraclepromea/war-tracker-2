@@ -61,6 +61,13 @@ export function WarNews() {
       setLoading(true);
       setError(null);
 
+      if (!supabase) {
+        console.log('📰 Supabase not available, using fallback data');
+        setEvents([]);
+        setLoading(false);
+        return;
+      }
+
       const { data, error: fetchError } = await supabase
         .from('war_events')
         .select('*')
@@ -82,6 +89,11 @@ export function WarNews() {
   // Set up real-time subscription
   useEffect(() => {
     fetchWarEvents();
+
+    if (!supabase) {
+      console.log('📰 Supabase not available, skipping real-time subscription');
+      return;
+    }
 
     console.log('🔔 Setting up real-time war events subscription...');
     
@@ -112,7 +124,9 @@ export function WarNews() {
       .subscribe();
 
     return () => {
-      supabase.removeChannel(channel);
+      if (supabase) {
+        supabase.removeChannel(channel);
+      }
     };
   }, []);
 

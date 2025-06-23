@@ -4,7 +4,7 @@ import { Dashboard } from '@/components/Dashboard';
 import { WarEvents } from '@/components/WarEvents';
 import { LiveNews } from '@/components/LiveNews';
 import { CountriesAndForces } from '@/components/CountriesAndForces';
-import Settings from '@/components/Settings';
+import { Settings } from '@/components/Settings';
 import { DebugConsole } from '@/components/DebugConsole';
 import { BattleMaps } from '@/components/BattleMaps';
 import { WarNews } from '@/components/WarNews';

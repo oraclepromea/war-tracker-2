@@ -1,11 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Slider } from '@/components/ui/slider';
-import { Badge } from '@/components/ui/badge';
 import { Settings as SettingsIcon, Bell, Globe, Palette, Database, Shield } from 'lucide-react';
 
 interface SettingsData {
@@ -16,6 +11,75 @@ interface SettingsData {
   autoSync: boolean;
   dataRetention: number;
 }
+
+// Simple UI components to replace missing shadcn components
+const Switch = ({ checked, onCheckedChange }: { checked: boolean; onCheckedChange: (checked: boolean) => void }) => (
+  <button
+    onClick={() => onCheckedChange(!checked)}
+    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+      checked ? 'bg-blue-600' : 'bg-gray-600'
+    }`}
+  >
+    <span
+      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+        checked ? 'translate-x-6' : 'translate-x-1'
+      }`}
+    />
+  </button>
+);
+
+const Label = ({ children, htmlFor, className }: { children: React.ReactNode; htmlFor?: string; className?: string }) => (
+  <label htmlFor={htmlFor} className={`text-sm font-medium text-tactical-text ${className || ''}`}>
+    {children}
+  </label>
+);
+
+const Select = ({ value, onValueChange, children }: { value: string; onValueChange: (value: string) => void; children: React.ReactNode }) => (
+  <select
+    value={value}
+    onChange={(e) => onValueChange(e.target.value)}
+    className="bg-tactical-panel border border-tactical-border rounded px-3 py-2 text-tactical-text"
+  >
+    {children}
+  </select>
+);
+
+const SelectItem = ({ value, children }: { value: string; children: React.ReactNode }) => (
+  <option value={value}>{children}</option>
+);
+
+const SelectContent = ({ children }: { children: React.ReactNode }) => <>{children}</>;
+const SelectTrigger = ({ children }: { children: React.ReactNode }) => <>{children}</>;
+const SelectValue = ({ placeholder }: { placeholder?: string }) => <span>{placeholder}</span>;
+
+const Slider = ({ value, onValueChange, min, max, step }: { 
+  value: number[]; 
+  onValueChange: (value: number[]) => void; 
+  min: number; 
+  max: number; 
+  step: number; 
+}) => (
+  <input
+    type="range"
+    min={min}
+    max={max}
+    step={step}
+    value={value[0]}
+    onChange={(e) => onValueChange([Number(e.target.value)])}
+    className="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer"
+  />
+);
+
+const Badge = ({ children, variant }: { children: React.ReactNode; variant?: string }) => (
+  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+    variant === 'destructive' ? 'bg-red-100 text-red-800' : 
+    variant === 'secondary' ? 'bg-gray-100 text-gray-800' :
+    variant === 'outline' ? 'bg-transparent border border-gray-300 text-gray-700' :
+    'bg-blue-100 text-blue-800'
+  }`}>
+    {children}
+  </span>
+);
 
 export const Settings: React.FC = () => {
   const [settings, setSettings] = useState<SettingsData>({
@@ -47,6 +111,30 @@ export const Settings: React.FC = () => {
     setSettings(prev => ({ ...prev, [key]: value }));
   };
 
+  const handleNotificationsChange = (checked: boolean) => {
+    updateSetting('notifications', checked);
+  };
+
+  const handleThemeChange = (value: string) => {
+    updateSetting('theme', value);
+  };
+
+  const handleLanguageChange = (value: string) => {
+    updateSetting('language', value);
+  };
+
+  const handleRefreshIntervalChange = (value: number[]) => {
+    updateSetting('refreshInterval', value[0]);
+  };
+
+  const handleAutoSyncChange = (checked: boolean) => {
+    updateSetting('autoSync', checked);
+  };
+
+  const handleDataRetentionChange = (value: number[]) => {
+    updateSetting('dataRetention', value[0]);
+  };
+
   return (
     <div className="container mx-auto p-6 space-y-6">
       <div className="flex items-center gap-2 mb-6">
@@ -70,9 +158,8 @@ export const Settings: React.FC = () => {
             <div className="flex items-center justify-between">
               <Label htmlFor="notifications">Enable notifications</Label>
               <Switch
-                id="notifications"
                 checked={settings.notifications}
-                onCheckedChange={(checked) => updateSetting('notifications', checked)}
+                onCheckedChange={handleNotificationsChange}
               />
             </div>
           </CardContent>
@@ -92,7 +179,7 @@ export const Settings: React.FC = () => {
           <CardContent className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="theme">Theme</Label>
-              <Select value={settings.theme} onValueChange={(value) => updateSetting('theme', value)}>
+              <Select value={settings.theme} onValueChange={handleThemeChange}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select theme" />
                 </SelectTrigger>
@@ -120,7 +207,7 @@ export const Settings: React.FC = () => {
           <CardContent className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="language">Language</Label>
-              <Select value={settings.language} onValueChange={(value) => updateSetting('language', value)}>
+              <Select value={settings.language} onValueChange={handleLanguageChange}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select language" />
                 </SelectTrigger>
@@ -154,22 +241,19 @@ export const Settings: React.FC = () => {
                 Refresh interval: {settings.refreshInterval} seconds
               </Label>
               <Slider
-                id="refresh-interval"
                 min={10}
                 max={300}
                 step={10}
                 value={[settings.refreshInterval]}
-                onValueChange={(value) => updateSetting('refreshInterval', value[0])}
-                className="w-full"
+                onValueChange={handleRefreshIntervalChange}
               />
             </div>
             
             <div className="flex items-center justify-between">
               <Label htmlFor="auto-sync">Auto-sync data</Label>
               <Switch
-                id="auto-sync"
                 checked={settings.autoSync}
-                onCheckedChange={(checked) => updateSetting('autoSync', checked)}
+                onCheckedChange={handleAutoSyncChange}
               />
             </div>
 
@@ -178,13 +262,11 @@ export const Settings: React.FC = () => {
                 Data retention: {settings.dataRetention} days
               </Label>
               <Slider
-                id="data-retention"
                 min={7}
                 max={90}
                 step={1}
                 value={[settings.dataRetention]}
-                onValueChange={(value) => updateSetting('dataRetention', value[0])}
-                className="w-full"
+                onValueChange={handleDataRetentionChange}
               />
             </div>
           </CardContent>

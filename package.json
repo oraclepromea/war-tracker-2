@@ -1,27 +1,24 @@
 {
-  "name": "war-tracker",
-  "version": "0.1.0",
-  "private": true,
+  "name": "war-tracker-2.0",
+  "version": "2.0.0",
+  "description": "Real-time military conflict tracking system with AI-powered analysis",
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
-    "lint": "next lint"
+    "dev": "concurrently \"npm run dev:client\" \"npm run dev:functions\"",
+    "start": "./start.sh",
+    "dev:client": "cd client && npm run dev",
+    "dev:functions": "npx supabase functions serve",
+    "build": "cd client && npm run build",
+    "install:all": "npm install && cd client && npm install",
+    "setup": "./scripts/setup.sh",
+    "deploy:functions": "./scripts/deploy-functions.sh",
+    "test:api": "./scripts/test-api.sh",
+    "logs": "npx supabase functions logs --tail"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.39.0",
-    "@types/express": "^5.0.3",
-    "date-fns": "^4.1.0",
-    "express": "^5.1.0",
-    "next": "14.0.0",
-    "react": "^18",
-    "react-dom": "^18"
+    "@supabase/supabase-js": "^2.39.3",
+    "concurrently": "^8.2.2"
   },
   "devDependencies": {
-    "@types/node": "^20",
-    "@types/react": "^18",
-    "@types/react-dom": "^18",
-    "typescript": "^5",
-    "vite": "^6.3.5"
+    "supabase": "^1.123.4"
   }
 }

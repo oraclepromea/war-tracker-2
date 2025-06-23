@@ -1,7 +1,21 @@
+import { useState } from 'react';
 import { supabase, isSupabaseAvailable } from '@/lib/supabase';
 
+interface WarEvent {
+  id: number;
+  title: string;
+  description: string;
+  location: string;
+  severity: string;
+  source: string;
+  processed_at: string;
+  event_type: string;
+}
+
 export const useWarEvents = () => {
-  // ...existing code...
+  const [events, setEvents] = useState<WarEvent[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
 
   const fetchWarEvents = async () => {
     if (!isSupabaseAvailable()) {
@@ -39,11 +53,11 @@ export const useWarEvents = () => {
     }
   };
 
-  // ...existing code...
+  return { events, loading, error, fetchWarEvents };
 };
 
 // Fallback mock data
-const mockWarEvents = [
+const mockWarEvents: WarEvent[] = [
   {
     id: 1,
     title: 'Military Operation Update',
