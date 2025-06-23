@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { supabase, isSupabaseAvailable } from '@/lib/supabase';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/index';
@@ -100,6 +101,59 @@ export default function Settings() {
       return updated;
     });
   };
+
+  const saveToSupabase = async (settings: any) => {
+    if (!isSupabaseAvailable()) {
+      console.log('Supabase not available - settings saved to localStorage only');
+      return { success: true, message: 'Settings saved locally' };
+    }
+
+    try {
+      const { data, error } = await supabase!
+        .from('user_settings')
+        .upsert([settings]);
+
+      if (error) throw error;
+      return { success: true, message: 'Settings saved to cloud' };
+    } catch (error) {
+      console.error('Failed to save to Supabase:', error);
+      return { success: false, message: 'Failed to save to cloud, saved locally instead' };
+    }
+  };
+
+  const loadFromSupabase = async () => {
+    if (!isSupabaseAvailable()) {
+      return null;
+    }
+
+    try {
+      const { data, error } = await supabase!
+        .from('user_settings')
+        .select('*')
+        .single();
+
+      if (error && error.code !== 'PGRST116') throw error;
+      return data;
+    } catch (error) {
+      console.error('Failed to load from Supabase:', error);
+      return null;
+    }
+  };
+
+  useEffect(() => {
+    const fetchData = async () => {
+      const savedSettings = await loadFromSupabase();
+      if (savedSettings) {
+        setDataSources(savedSettings.dataSources);
+        setTheme(savedSettings.theme);
+        setPanelOpacity(savedSettings.panelOpacity);
+        setNotifications(savedSettings.notifications);
+        setApiKey(savedSettings.apiKey);
+      }
+    };
+
+    fetchData();
+  }, []);
 
   return (
     <div className="space-y-6 p-6 max-w-6xl mx-auto">

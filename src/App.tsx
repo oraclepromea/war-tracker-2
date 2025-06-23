@@ -2,7 +2,6 @@ import React from 'react';
 import Live from './components/Live';
 import './App.css';
 import { AutomationDashboard } from './components/AutomationDashboard';
-import WarNews from './pages/WarNews';
 
 // This file should be deleted - the real app is in /client/src/
 // Redirecting to proper client app...

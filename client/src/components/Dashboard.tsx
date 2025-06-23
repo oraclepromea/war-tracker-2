@@ -60,6 +60,7 @@ export function Dashboard() {
   });
   const [isLoading, setIsLoading] = useState(true);
   const [lastRefresh, setLastRefresh] = useState(new Date());
+  const [apiStatus, setApiStatus] = useState<'checking' | 'connected' | 'failed'>('checking');
 
   // Generate realistic events (same as WarEvents component)
   const generateCurrentEvents = (): WarEvent[] => {
@@ -241,6 +242,34 @@ export function Dashboard() {
   };
 
   useEffect(() => {
+    // Check API connection on load
+    const checkAPI = async () => {
+      try {
+        const apiUrl = import.meta.env.VITE_API_BASE_URL || 'https://war-tracker-20-production.up.railway.app';
+        console.log('Checking API at:', apiUrl);
+        
+        const response = await fetch(`${apiUrl}/health`, { 
+          method: 'GET',
+          headers: { 'Content-Type': 'application/json' }
+        });
+        
+        if (response.ok) {
+          setApiStatus('connected');
+        } else {
+          setApiStatus('failed');
+        }
+      } catch (error) {
+        console.error('API check failed:', error);
+        setApiStatus('failed');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    checkAPI();
+  }, []);
+
+  useEffect(() => {
     fetchEvents();
     
     // Auto-refresh every 2 minutes
@@ -274,6 +303,17 @@ export function Dashboard() {
   };
 
   const recentEvents = events.slice(0, 8);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-neon-400 mx-auto mb-4"></div>
+          <p className="text-tactical-muted">Connecting to War Tracker API...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 p-6 max-w-7xl mx-auto">
@@ -610,6 +650,23 @@ export function Dashboard() {
           </CardContent>
         </Card>
       </div>
+
+      {apiStatus === 'failed' && (
+        <div className="bg-red-900/20 border border-red-500 rounded-lg p-4 mb-6">
+          <h3 className="text-red-400 font-semibold mb-2">API Connection Failed</h3>
+          <p className="text-sm text-tactical-muted mb-2">
+            Unable to connect to the War Tracker API. This could be due to:
+          </p>
+          <ul className="text-sm text-tactical-muted list-disc list-inside space-y-1">
+            <li>Missing VITE_API_BASE_URL environment variable</li>
+            <li>API server is down</li>
+            <li>Network connectivity issues</li>
+          </ul>
+          <p className="text-sm text-tactical-muted mt-2">
+            Expected API URL: {import.meta.env.VITE_API_BASE_URL || 'Not set'}
+          </p>
+        </div>
+      )}
     </div>
   );
 }

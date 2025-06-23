@@ -1,16 +1,20 @@
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+// Make Supabase optional - use fallback values if env vars are missing
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://placeholder.supabase.co';
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'placeholder-key';
 
-if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error('Missing Supabase environment variables. Please check your .env file.');
-}
+// Check if we have real Supabase credentials
+export const hasSupabaseConfig = !!(
+  import.meta.env.VITE_SUPABASE_URL && 
+  import.meta.env.VITE_SUPABASE_ANON_KEY &&
+  import.meta.env.VITE_SUPABASE_URL !== 'https://placeholder.supabase.co'
+);
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-  realtime: {
-    params: {
-      eventsPerSecond: 10
-    }
-  }
-});
+// Create client but only use it if we have valid config
+export const supabase = hasSupabaseConfig ? createClient(supabaseUrl, supabaseAnonKey) : null;
+
+// Helper function to check if Supabase is available
+export const isSupabaseAvailable = () => hasSupabaseConfig && supabase !== null;
+
+console.log('🔗 Supabase Status:', hasSupabaseConfig ? 'Connected' : 'Not configured (using fallback data)');
