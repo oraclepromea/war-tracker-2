@@ -39,5 +39,41 @@ export const api = {
     }
   },
 
-  // ...existing methods...
+  // Conflicts endpoint
+  async getConflicts() {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/conflicts`);
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      return await response.json();
+    } catch (error) {
+      console.error('Failed to fetch conflicts:', error);
+      throw error;
+    }
+  },
+
+  // Sources endpoint
+  async getSources() {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/sources`);
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      return await response.json();
+    } catch (error) {
+      console.error('Failed to fetch sources:', error);
+      throw error;
+    }
+  },
+
+  // Sync RSS feeds
+  async syncRSS() {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/sync-rss`, {
+        method: 'POST'
+      });
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      return await response.json();
+    } catch (error) {
+      console.error('Failed to sync RSS:', error);
+      throw error;
+    }
+  }
 };
