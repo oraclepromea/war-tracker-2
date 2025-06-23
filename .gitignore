@@ -103,6 +103,15 @@ public
 tmp/
 temp/
 
+# Netlify deployment
+.netlify/
+client/.netlify/
+
+# Backup files
+backup-old-files/
+*.backup
+*.bak
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
