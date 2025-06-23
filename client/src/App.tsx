@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Navigation } from '@/components/Navigation';
 import { Dashboard } from '@/components/Dashboard';
 import { WarEvents } from '@/components/WarEvents';
@@ -13,6 +13,7 @@ import './index.css';
 
 function App() {
   const [activeTab, setActiveTab] = useState('Dashboard');
+  const [error, setError] = useState<string | null>(null);
 
   const tabs = [
     { name: 'Dashboard', icon: '🏠', component: Dashboard },
@@ -33,6 +34,34 @@ function App() {
     }
     return <Dashboard />;
   };
+
+  // Add error boundary
+  useEffect(() => {
+    const handleError = (event: ErrorEvent) => {
+      console.error('Application error:', event.error);
+      setError('Application failed to load. Please check console for details.');
+    };
+
+    window.addEventListener('error', handleError);
+    return () => window.removeEventListener('error', handleError);
+  }, []);
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-900 text-white flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-2xl mb-4">War Tracker 2.0</h1>
+          <p className="text-red-400 mb-4">{error}</p>
+          <button 
+            onClick={() => window.location.reload()} 
+            className="bg-blue-600 px-4 py-2 rounded"
+          >
+            Reload
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-tactical-bg text-tactical-text">
