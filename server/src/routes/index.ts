@@ -53,4 +53,15 @@ router.get('/', (req, res) => {
   });
 });
 
+// Add health check endpoint
+router.get('/api/health', (req, res) => {
+  res.json({ 
+    success: true, 
+    status: 'healthy',
+    timestamp: new Date().toISOString(),
+    version: '2.0.0',
+    uptime: process.uptime()
+  });
+});
+
 export default router;

@@ -12,66 +12,15 @@ const dataSourceManager = EnhancedDataSourceManager.getInstance();
 app.use(cors());
 app.use(express.json());
 
-// Health check endpoint with comprehensive diagnostics
-app.get('/api/health', async (req, res) => {
-  try {
-    const healthCheck = {
-      status: 'OK',
-      timestamp: new Date().toISOString(),
-      uptime: process.uptime(),
-      environment: process.env.NODE_ENV || 'development',
-      services: {
-        database: 'unknown',
-        rss_feeds: 'unknown',
-        memory: process.memoryUsage(),
-        version: process.env.npm_package_version || '1.0.0'
-      }
-    };
-
-    // Test database connection (commented out until Prisma is properly configured)
-    // try {
-    //   await prisma.$queryRaw`SELECT 1`;
-    //   healthCheck.services.database = 'connected';
-    // } catch (dbError) {
-    //   healthCheck.services.database = 'disconnected';
-    //   healthCheck.status = 'DEGRADED';
-    // }
-
-    // Test RSS feed accessibility (basic check)
-    const rssFeeds = [
-      'https://feeds.reuters.com/reuters/worldNews',
-      'http://feeds.bbci.co.uk/news/world/rss.xml'
-    ];
-
-    let rssHealthy = 0;
-    for (const feed of rssFeeds) {
-      try {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 5000);
-        
-        const response = await fetch(feed, {
-          signal: controller.signal,
-          method: 'HEAD'
-        });
-        
-        clearTimeout(timeoutId);
-        if (response.ok) rssHealthy++;
-      } catch (error) {
-        // RSS feed unreachable
-      }
-    }
-
-    healthCheck.services.rss_feeds = `${rssHealthy}/${rssFeeds.length} accessible`;
-    
-    res.json(healthCheck);
-  } catch (error) {
-    console.error('Health check error:', error instanceof Error ? error.message : String(error));
-    res.status(500).json({
-      status: 'ERROR',
-      error: error instanceof Error ? error.message : String(error),
-      timestamp: new Date().toISOString()
-    });
-  }
+// Health check endpoint
+app.get('/api/health', (req, res) => {
+  res.json({ 
+    success: true, 
+    status: 'healthy',
+    timestamp: new Date().toISOString(),
+    version: '2.0.0',
+    uptime: process.uptime()
+  });
 });
 
 // RSS Feed testing endpoint
@@ -198,8 +147,6 @@ app.get('/api/news', async (req, res) => {
     console.log('📰 News endpoint called');
     console.log('📰 Request headers:', req.headers);
     console.log('📰 Request URL:', req.url);
-    
-    // Try to get news from enhanced data sources first
     console.log('📰 Attempting to fetch from dataSourceManager...');
     const realNews = await dataSourceManager.fetchAllSources();
     console.log('📰 dataSourceManager result:', realNews);
