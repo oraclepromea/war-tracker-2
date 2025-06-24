@@ -5,7 +5,8 @@ export const API_ENDPOINTS = {
   live: '/api/live'
 };
 
-export const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001';
+// Fix: Use VITE_ prefix for Vite environment variables
+export const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
 export const RSS_SOURCES = [
   { name: 'BBC News', category: 'general', language: 'en', url: 'http://feeds.bbci.co.uk/news/rss.xml', needsTranslation: false, priority: 'medium' as const },

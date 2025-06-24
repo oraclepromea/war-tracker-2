@@ -1,9 +1,15 @@
-import { defineConfig } from 'vite';
-import react from '@vitejs/plugin-react';
-import path from 'path';
+import { defineConfig } from 'vite'
+import react from '@vitejs/plugin-react'
+import path from 'path'
 
 export default defineConfig({
   plugins: [react()],
+  base: '/',
+  build: {
+    outDir: 'dist',
+    emptyOutDir: true,
+    sourcemap: false
+  },
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
@@ -11,10 +17,10 @@ export default defineConfig({
   },
   server: {
     port: 3000,
-    host: true,
+    host: true
   },
-  build: {
-    outDir: 'dist',
-    sourcemap: true,
-  },
-});
+  preview: {
+    port: 3000,
+    host: true
+  }
+})

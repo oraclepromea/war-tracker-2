@@ -1,17 +1,22 @@
 [build]
   base = "client"
   command = "npm install && npm run build"
-  publish = "dist"
+  publish = "client/dist"
 
 [build.environment]
+  NODE_VERSION = "18"
+  NODE_ENV = "production"
   VITE_API_URL = "https://war-tracker-20-production.up.railway.app"
   VITE_SUPABASE_URL = "https://prmjtsiyeovmkujtbjwi.supabase.co"
-  VITE_SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBybWp0c2l5ZW92bWt1anRiandpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA1NjMyMzUsImV4cCI6MjA2NjEzOTIzNX0.lqv_1rW2P_2O0PH8cn15wMXoueZT8o_HQ5bm1bfk6cM"
+  VITE_SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBybWp0c2l5ZW92bWt1anRiandpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA1NjMyMzUsImV4cCI6MjA2NjEzOTIzNX0.s4rGlQxKFqLVnRAhKr9ctyVRO0IqkjjXhcfmvNbJFBc"
+  AI_ANALYSIS_ENABLED = "true"
+  TRANSLATION_ENABLED = "true"
 
 [[redirects]]
   from = "/api/*"
   to = "https://war-tracker-20-production.up.railway.app/api/:splat"
   status = 200
+  force = true
 
 [[redirects]]
   from = "/*"
