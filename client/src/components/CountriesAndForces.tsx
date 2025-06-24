@@ -1256,7 +1256,7 @@ export function CountriesAndForces() {
       <div className="space-y-6 p-6 max-w-full mx-auto">
         <div className="flex items-center justify-between">
           <h2 className="text-2xl font-tactical font-bold text-neon-400">
-            Countries & Forces
+            Countries & Forces Analysis
           </h2>
           
           {/* Expand/Collapse All Controls */}
