@@ -1,23 +1,9 @@
 import express from 'express';
 import cors from 'cors';
-import { EnhancedDataSourceManager } from './services/enhancedDataSources';
 
 const app = express();
 
-// Initialize the data source manager
-const dataSourceManager = EnhancedDataSourceManager.getInstance();
-
-// CORS configuration
-app.use(cors({
-  origin: [
-    'http://localhost:3000',
-    'http://localhost:5173',
-    'https://war-tracker-20-production.up.railway.app'
-  ],
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],
-  allowedHeaders: ['Content-Type', 'Authorization']
-}));
-
+app.use(cors());
 app.use(express.json());
 
 // Health check endpoint - MUST BE FIRST
@@ -69,4 +55,3 @@ app.get('/api/live', (req, res) => {
 });
 
 export default app;
-export { dataSourceManager };
