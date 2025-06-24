@@ -10,21 +10,15 @@ export interface Article {
   category: string;
 }
 
-export const fetchArticles = async (): Promise<Article[]> => {
+export async function fetchArticles() {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/articles`);
-    
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-    
-    const data = await response.json();
-    return data.articles || [];
+    const response = await fetch('/api/articles');
+    return await response.json();
   } catch (error) {
-    console.error('Error fetching articles:', error);
+    console.error('Failed to fetch articles:', error);
     return [];
   }
-};
+}
 
 export const fetchArticleById = async (id: string): Promise<Article | null> => {
   try {
@@ -64,7 +58,7 @@ export class ArticlesService {
     return [];
   }
   
-  static async searchArticles(query: string) {
+  static async searchArticles(_query: string) {
     // Mock implementation
     return [];
   }

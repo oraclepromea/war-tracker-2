@@ -1,4 +1,3 @@
-import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { 
@@ -13,14 +12,14 @@ import {
 import { useRealTimeData } from '@/hooks/useRealTimeData';
 
 export function LiveEventsFeed() {
-  const { events, isConnected, connectionStatus } = useRealTimeData();
+  const { events, connectionStatus } = useRealTimeData();
   
   // Extract events data from backendData
   const loading = connectionStatus === 'checking';
   const error = connectionStatus === 'offline' ? 'Backend offline' : null;
 
-  // Get the latest 10 events
-  const recentEvents = events.slice(0, 10);
+  // Get the latest 10 events - fix the array handling
+  const recentEvents = Array.isArray(events) ? events.slice(0, 10) : [];
   
   const getSeverityColor = (severity: string) => {
     const colors = {
@@ -71,12 +70,12 @@ export function LiveEventsFeed() {
       </CardHeader>
       <CardContent className="p-0">
         <div className="max-h-96 overflow-y-auto">
-          {loading && events.length === 0 ? (
+          {loading && recentEvents.length === 0 ? (
             <div className="p-4 text-center text-tactical-muted">
               <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-neon-400 mx-auto mb-2" />
               Loading events...
             </div>
-          ) : error && events.length === 0 ? (
+          ) : error && recentEvents.length === 0 ? (
             <div className="p-4 text-center text-red-400">
               <AlertTriangle className="h-6 w-6 mx-auto mb-2" />
               {error}
@@ -87,7 +86,7 @@ export function LiveEventsFeed() {
             </div>
           ) : (
             <div className="space-y-2 p-4">
-              {events.map((event: any, index: number) => (
+              {recentEvents.map((event: any, index: number) => (
                 <motion.div
                   key={event.id}
                   initial={{ opacity: 0, x: -20 }}
@@ -148,7 +147,7 @@ export function LiveEventsFeed() {
           )}
         </div>
         
-        {events.length > 10 && (
+        {Array.isArray(events) && events.length > 10 && (
           <div className="p-3 border-t border-tactical-border text-center">
             <span className="text-xs text-tactical-muted font-mono">
               Showing latest 10 of {events.length} events
@@ -158,6 +157,6 @@ export function LiveEventsFeed() {
       </CardContent>
     </Card>
   );
-};
+}
 
 export default LiveEventsFeed;

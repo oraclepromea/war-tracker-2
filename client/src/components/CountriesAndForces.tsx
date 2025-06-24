@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { WikipediaImageService } from '@/services/wikipediaImageService';
@@ -14,10 +14,6 @@ interface Weapon {
   imageUrl: string;
 }
 
-interface WikipediaImage {
-  title: string;
-  url: string;
-}
 
 const countries = [
   {
@@ -1281,12 +1277,11 @@ export function CountriesAndForces() {
         </div>
         
         <div className="space-y-4">
-          {countries.map((country, index) => (
+          {countries.map((country) => (
             <motion.div
               key={country.id}
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: index * 0.1 }}
               className="w-full"
             >
               <Card 
@@ -1297,50 +1292,51 @@ export function CountriesAndForces() {
                 }`}
               >
                 <div onClick={() => setSelectedCountry(country.id)}>
-                  <CardHeader 
+                  <div 
                     className="cursor-pointer"
                     onClick={() => toggleCountryExpansion(country.id)}
                   >
-                    <CardTitle className="flex items-center justify-between">
-                      <div className="flex items-center space-x-3">
-                        <span className="text-3xl">{country.flag}</span>
-                        <div>
-                          <div className="text-neon-400">{country.name}</div>
-                          <div className="text-sm text-tactical-muted font-mono">
-                            COMBAT STATUS: ACTIVE
+                    <CardHeader>
+                      <CardTitle className="flex items-center justify-between">
+                        <div className="flex items-center space-x-3">
+                          <span className="text-3xl">{country.flag}</span>
+                          <div>
+                            <div className="text-neon-400">{country.name}</div>
+                            <div className="text-sm text-tactical-muted font-mono">
+                              COMBAT STATUS: ACTIVE
+                            </div>
                           </div>
                         </div>
-                      </div>
-                      
-                      {/* Quick Stats */}
-                      <div className="flex items-center space-x-6">
-                        <div className="text-center">
-                          <div className="text-tactical-muted text-xs font-mono">CASUALTIES</div>
-                          <div className="text-red-400 font-tactical">
-                            {country.casualties.toLocaleString()}
+                        
+                        <div className="flex items-center space-x-6">
+                          <div className="text-center">
+                            <div className="text-tactical-muted text-xs font-mono">CASUALTIES</div>
+                            <div className="text-red-400 font-tactical">
+                              {country.casualties.toLocaleString()}
+                            </div>
                           </div>
-                        </div>
-                        <div className="text-center">
-                          <div className="text-tactical-muted text-xs font-mono">ECONOMIC HIT</div>
-                          <div className="text-orange-400 font-tactical">
-                            ${country.economicImpact}B
+                          <div className="text-center">
+                            <div className="text-tactical-muted text-xs font-mono">ECONOMIC HIT</div>
+                            <div className="text-orange-400 font-tactical">
+                              ${country.economicImpact}B
+                            </div>
                           </div>
-                        </div>
-                        <div className="text-center">
-                          <div className="text-tactical-muted text-xs font-mono">GROUND FORCES</div>
-                          <div className="text-neon-400 font-tactical">
-                            {country.forces.ground.toLocaleString()}
+                          <div className="text-center">
+                            <div className="text-tactical-muted text-xs font-mono">GROUND FORCES</div>
+                            <div className="text-neon-400 font-tactical">
+                              {country.forces.ground.toLocaleString()}
+                            </div>
                           </div>
+                          <motion.div
+                            animate={{ rotate: expandedCountry === country.id || allExpanded ? 180 : 0 }}
+                            className="text-neon-400"
+                          >
+                            {'▼'}
+                          </motion.div>
                         </div>
-                        <motion.div
-                          animate={{ rotate: expandedCountry === country.id ? 180 : 0 }}
-                          className="text-neon-400"
-                        >
-                          ▼
-                        </motion.div>
-                      </div>
-                    </CardTitle>
-                  </CardHeader>
+                      </CardTitle>
+                    </CardHeader>
+                  </div>
                   
                   {(expandedCountry === country.id || allExpanded) && (
                     <motion.div

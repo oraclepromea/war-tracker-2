@@ -115,9 +115,10 @@ const formatRelativeTime = (dateString: string): string => {
 };
 
 export function LiveNews() {
-  // Add missing state variables
-  const [selectedCategories, setSelectedCategories] = useState<Set<string>>(new Set());
-  const [selectedLanguages, setSelectedLanguages] = useState<Set<string>>(new Set());
+  // Remove unused state variables
+  // const [newsData, setNewsData] = useState<any[]>([]);
+  // const [selectedCategories] = useState<Set<string>>(new Set());
+  // const [selectedLanguages] = useState<Set<string>>(new Set());
 
   const [articles, setArticles] = useState<NewsItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -527,31 +528,6 @@ const languages = Array.from(new Set(RSS_SOURCES.map((source: NewsSource) => sou
       </div>
     );
   }
-
-  // Fix: Replace Zap with Activity icon
-  const getCategoryIcon = (category: string) => {
-    switch (category?.toLowerCase()) {
-      case 'military': return <Activity className="w-4 h-4" />;
-      case 'civilian': return <AlertTriangle className="w-4 h-4" />;
-      case 'diplomatic': return <Globe className="w-4 h-4" />;
-      default: return <Clock className="w-4 h-4" />;
-    }
-  };
-
-  // Fix RSS source filtering
-  const filteredSources = RSS_SOURCES.filter((source: NewsSource) => 
-    selectedCategories.size === 0 || 
-    (source.category && Array.from(selectedCategories).some((cat: string) => 
-      source.category?.toLowerCase().includes(cat.toLowerCase())
-    ))
-);
-
-const filteredLanguages = RSS_SOURCES.filter((source: NewsSource) =>
-  selectedLanguages.size === 0 ||
-  (source.language && Array.from(selectedLanguages).some((lang: string) => 
-    source.language?.toLowerCase().includes(lang.toLowerCase())
-  ))
-);
 
   return (
     <div className="min-h-screen bg-tactical-bg p-4 md:p-6" onClick={() => setNewArticleCount(0)}>

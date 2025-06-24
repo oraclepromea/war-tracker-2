@@ -3,35 +3,51 @@ import React from 'react';
 interface CardProps {
   children: React.ReactNode;
   className?: string;
-  onClick?: () => void;
 }
 
-export const Card: React.FC<CardProps> = ({ children, className = '', onClick }) => (
-  <div className={`tactical-panel border border-tactical-border rounded-lg ${className}`} onClick={onClick}>
-    {children}
-  </div>
-);
+interface CardHeaderProps {
+  children: React.ReactNode;
+  className?: string;
+}
 
-export const CardHeader: React.FC<CardProps> = ({ children, className = '' }) => (
-  <div className={`p-4 border-b border-tactical-border ${className}`}>
-    {children}
-  </div>
-);
+interface CardTitleProps {
+  children: React.ReactNode;
+  className?: string;
+}
 
-export const CardTitle: React.FC<CardProps> = ({ children, className = '' }) => (
-  <h3 className={`text-lg font-semibold text-neon-400 ${className}`}>
-    {children}
-  </h3>
-);
+interface CardContentProps {
+  children: React.ReactNode;
+  className?: string;
+}
 
-export const CardContent: React.FC<CardProps> = ({ children, className = '' }) => (
-  <div className={`p-4 ${className}`}>
-    {children}
-  </div>
-);
+export const Card: React.FC<CardProps> = ({ children, className = '' }) => {
+  return (
+    <div className={`bg-tactical-panel border border-tactical-border rounded-lg ${className}`}>
+      {children}
+    </div>
+  );
+};
 
-export const CardDescription: React.FC<CardProps> = ({ children, className = '' }) => (
-  <p className={`text-tactical-muted ${className}`}>
-    {children}
-  </p>
-);
+export const CardHeader: React.FC<CardHeaderProps> = ({ children, className = '' }) => {
+  return (
+    <div className={`p-6 pb-0 ${className}`}>
+      {children}
+    </div>
+  );
+};
+
+export const CardTitle: React.FC<CardTitleProps> = ({ children, className = '' }) => {
+  return (
+    <h3 className={`text-lg font-semibold text-tactical-text ${className}`}>
+      {children}
+    </h3>
+  );
+};
+
+export const CardContent: React.FC<CardContentProps> = ({ children, className = '' }) => {
+  return (
+    <div className={`p-6 pt-0 ${className}`}>
+      {children}
+    </div>
+  );
+};

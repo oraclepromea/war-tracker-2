@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { API_BASE_URL } from '../lib/api';
 
 export interface RealTimeEvent {
   id: string;

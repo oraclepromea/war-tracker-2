@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { useRealTimeData, type RealTimeEvent } from '@/hooks/useRealTimeData';
 import { motion } from 'framer-motion';
@@ -330,20 +330,19 @@ const extractKeyEntities = (text: string): string[] => {
   return [...new Set(entities)];
 };
 
-// Add proper interface for casualty data
-interface CasualtyData {
-  confirmed?: number;
-  estimated?: number;
-  total?: number;
-}
+// Remove unused interface
+// interface CasualtyData {
+//   confirmed?: number;
+//   estimated?: number;
+//   total?: number;
+// }
 
 export function WarEvents() {
   const realTimeData = useRealTimeData();
   const [filteredEvents, setFilteredEvents] = useState<RealTimeEvent[]>([]);
-  const [transformedEvents, setTransformedEvents] = useState<WarEvent[]>([]); // Add state for transformed events
+  const [transformedEvents, setTransformedEvents] = useState<WarEvent[]>([]);
 
-  // Fix the data access
-  const status = realTimeData.status || 'connecting';
+  // Remove unused variables
   const isConnected = realTimeData.isConnected;
   const connectionStatus = realTimeData.connectionStatus;
 
@@ -480,35 +479,6 @@ export function WarEvents() {
     if (minutes < 60) return `${minutes}m ago`;
     if (hours < 24) return `${hours}h ago`;
     return `${days}d ago`;
-  };
-
-  const renderCasualties = (casualties: number | CasualtyData | undefined) => {
-    if (typeof casualties === 'number') {
-      return (
-        <div className="casualties-info">
-          <span>Total: {casualties}</span>
-        </div>
-      );
-    }
-    
-    if (casualties && typeof casualties === 'object') {
-      const casualtyObj = casualties as CasualtyData;
-      return (
-        <div className="casualties-breakdown">
-          {casualtyObj.confirmed !== undefined && (
-            <div className="confirmed">Confirmed: {casualtyObj.confirmed}</div>
-          )}
-          {casualtyObj.estimated !== undefined && (
-            <div className="estimated">Estimated: {casualtyObj.estimated}</div>
-          )}
-          {casualtyObj.total !== undefined && (
-            <div className="total">Total: {casualtyObj.total}</div>
-          )}
-        </div>
-      );
-    }
-
-    return <div>No casualty data available</div>;
   };
 
   // Helper function to safely get casualty values
@@ -685,7 +655,7 @@ export function WarEvents() {
             </CardHeader>
             <CardContent>
               <div className="space-y-3 max-h-96 overflow-y-auto">
-                {transformedEvents.map((event, index) => (
+                {transformedEvents.map((event: any, index: number) => (
                   <motion.div
                     key={event.id}
                     initial={{ opacity: 0, x: -20 }}
