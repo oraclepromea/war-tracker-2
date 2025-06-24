@@ -110,15 +110,13 @@ export function LiveNews() {
   const [articles, setArticles] = useState<NewsItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [filters, setFilters] = useState<NewsFilters>({
+  const [filters, setFilters] = useState({
     search: '',
-    sources: [],
-    categories: [],
-    languages: [],
-    threatLevels: [],
-    dateRange: { start: '', end: '' },
-    sortBy: 'date',
-    sortOrder: 'desc'
+    sources: [] as string[],
+    threatLevels: [] as string[],
+    categories: [] as string[],
+    timeRange: '24h',
+    sortBy: 'timestamp'
   });
   const [currentPage, setCurrentPage] = useState(1);
   const [showFilters, setShowFilters] = useState(false);
@@ -440,21 +438,19 @@ export function LiveNews() {
   }, [autoRefresh, refreshInterval]);
 
   // Filter handlers
-  const updateFilters = (newFilters: Partial<NewsFilters>) => {
-    setFilters((prev: NewsFilters) => ({ ...prev, ...newFilters }));
+  const updateFilters = (newFilters: Partial<typeof filters>) => {
+    setFilters(prev => ({ ...prev, ...newFilters }));
     setCurrentPage(1);
   };
 
   const resetFilters = () => {
     setFilters({
       search: '',
-      sources: [],
-      categories: [],
-      languages: [],
-      threatLevels: [],
-      dateRange: { start: '', end: '' },
-      sortBy: 'date',
-      sortOrder: 'desc'
+      sources: [] as string[],
+      threatLevels: [] as string[],
+      categories: [] as string[],
+      timeRange: '24h',
+      sortBy: 'timestamp'
     });
     setCurrentPage(1);
   };

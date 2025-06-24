@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
-import { format } from 'date-fns'
 
 // Types
 interface WarEvent {
@@ -29,6 +28,17 @@ interface Filters {
   time_window: string
   event_type: string
 }
+
+// Simple date formatter to replace date-fns
+const formatTimeAgo = (date: string): string => {
+  const now = new Date();
+  const past = new Date(date);
+  const diffInMinutes = Math.floor((now.getTime() - past.getTime()) / (1000 * 60));
+  
+  if (diffInMinutes < 60) return `${diffInMinutes}m ago`;
+  if (diffInMinutes < 1440) return `${Math.floor(diffInMinutes / 60)}h ago`;
+  return `${Math.floor(diffInMinutes / 1440)}d ago`;
+};
 
 const WarNews: React.FC = () => {
   const [events, setEvents] = useState<WarEvent[]>([])
@@ -434,7 +444,7 @@ const WarNews: React.FC = () => {
 
                   <div className="mt-3 pt-3 border-t border-tactical-border">
                     <p className="text-xs text-tactical-muted">
-                      {format(new Date(event.timestamp), 'MMM dd, yyyy HH:mm')} • 
+                      {formatTimeAgo(event.timestamp)} • 
                       Click for details
                     </p>
                   </div>
