@@ -1,0 +1,125 @@
+import { useState, useEffect } from 'react';
+import { Navigation } from '@/components/Navigation';
+import { Dashboard } from '@/components/Dashboard';
+import { WarEvents } from '@/components/WarEvents';
+import { LiveNews } from '@/components/LiveNews';
+import { CountriesAndForces } from '@/components/CountriesAndForces';
+import { Settings } from '@/components/Settings';
+import { DebugConsole } from '@/components/DebugConsole';
+import { BattleMaps } from '@/components/BattleMaps';
+import { WarNews } from '@/components/WarNews';
+import { motion, AnimatePresence } from 'framer-motion';
+import './index.css';
+
+function App() {
+  const [activeTab, setActiveTab] = useState('Dashboard');
+  const [error, setError] = useState<string | null>(null);
+
+  const tabs = [
+    { name: 'Dashboard', icon: '🏠', component: Dashboard },
+    { name: 'Events', icon: '📅', component: WarEvents },
+    { name: 'Live News', icon: '📰', component: LiveNews },
+    { name: 'Maps', icon: '🗺️', component: BattleMaps },
+    { name: 'Countries', icon: '🌍', component: CountriesAndForces },
+    { name: 'Settings', icon: '⚙️', component: Settings },
+    { name: 'Debug', icon: '🐞', component: DebugConsole },
+    { name: 'War News', icon: '🎯', component: WarNews },
+  ];
+
+  const renderActiveTab = () => {
+    const activeTabObject = tabs.find(tab => tab.name === activeTab);
+    if (activeTabObject) {
+      const Component = activeTabObject.component;
+      return <Component />;
+    }
+    return <Dashboard />;
+  };
+
+  // Add error boundary
+  useEffect(() => {
+    const handleError = (event: ErrorEvent) => {
+      console.error('Application error:', event.error);
+      setError('Application failed to load. Please check console for details.');
+    };
+
+    window.addEventListener('error', handleError);
+    return () => window.removeEventListener('error', handleError);
+  }, []);
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-900 text-white flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-2xl mb-4">War Tracker 2.0</h1>
+          <p className="text-red-400 mb-4">{error}</p>
+          <button 
+            onClick={() => window.location.reload()} 
+            className="bg-blue-600 px-4 py-2 rounded"
+          >
+            Reload
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-tactical-bg text-tactical-text">
+      {/* HUD Scanline Effect */}
+      <div className="fixed inset-0 pointer-events-none hud-scanline opacity-20" />
+      
+      {/* Background Grid */}
+      <div 
+        className="fixed inset-0 opacity-5 pointer-events-none"
+        style={{
+          backgroundImage: `
+            linear-gradient(rgba(74, 222, 128, 0.1) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(74, 222, 128, 0.1) 1px, transparent 1px)
+          `,
+          backgroundSize: '50px 50px'
+        }}
+      />
+
+      <Navigation activeTab={activeTab} onTabChange={setActiveTab} tabs={tabs} />
+      
+      <main className="relative z-10">
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={activeTab}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ duration: 0.3 }}
+          >
+            {renderActiveTab()}
+          </motion.div>
+        </AnimatePresence>
+      </main>
+
+      {/* Footer Status Bar */}
+      <footer className="fixed bottom-0 left-0 right-0 tactical-panel border-t border-tactical-border px-4 py-2 z-20">
+        <div className="flex items-center justify-between text-xs font-mono">
+          <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-1">
+              <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
+              <span className="text-green-400">ONLINE</span>
+            </div>
+            <div className="text-tactical-muted">
+              Last Update: {new Date().toLocaleTimeString()}
+            </div>
+          </div>
+          <div className="flex items-center space-x-4">
+            <div className="text-tactical-muted">
+              API Status: <span className="text-neon-400">OPERATIONAL</span>
+            </div>
+            <div className="text-tactical-muted">
+              Active Events: <span className="text-red-400">47</span>
+            </div>
+          </div>
+        </div>
+      </footer>
+    </div>
+  );
+}
+
+export default App;
