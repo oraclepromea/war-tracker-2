@@ -10,12 +10,12 @@ import {
   Globe, 
   ChevronDown, 
   ChevronUp,
-  Zap,
   RefreshCw,
   Languages,
   ArrowUpDown,
   Hash,
-  CheckCircle
+  CheckCircle,
+  Activity  // Add Activity to replace Zap
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
@@ -116,7 +116,10 @@ export function LiveNews() {
     threatLevels: [] as string[],
     categories: [] as string[],
     timeRange: '24h',
-    sortBy: 'timestamp'
+    sortBy: 'timestamp',
+    languages: [] as string[],
+    dateRange: { start: '', end: '' },  // Fix: Make dateRange an object
+    sortOrder: 'desc'
   });
   const [currentPage, setCurrentPage] = useState(1);
   const [showFilters, setShowFilters] = useState(false);
@@ -450,7 +453,10 @@ export function LiveNews() {
       threatLevels: [] as string[],
       categories: [] as string[],
       timeRange: '24h',
-      sortBy: 'timestamp'
+      sortBy: 'timestamp',
+      languages: [] as string[],
+      dateRange: { start: '', end: '' },  // Fix: Make dateRange an object
+      sortOrder: 'desc'
     });
     setCurrentPage(1);
   };
@@ -474,7 +480,7 @@ export function LiveNews() {
             <div className="flex flex-col items-center space-y-4">
               <div className="relative">
                 <Globe className="h-12 w-12 text-neon-400 animate-spin" />
-                <Zap className="h-6 w-6 text-yellow-400 absolute top-0 right-0 animate-pulse" />
+                <Activity className="h-6 w-6 text-yellow-400 absolute top-0 right-0 animate-pulse" />
               </div>
               <p className="text-lg font-mono text-tactical-text">
                 Loading enhanced intelligence feeds...
@@ -509,6 +515,16 @@ export function LiveNews() {
       </div>
     );
   }
+
+  // Fix: Replace Zap with Activity icon
+  const getCategoryIcon = (category: string) => {
+    switch (category?.toLowerCase()) {
+      case 'military': return <Activity className="w-4 h-4" />;
+      case 'civilian': return <AlertTriangle className="w-4 h-4" />;
+      case 'diplomatic': return <Globe className="w-4 h-4" />;
+      default: return <Clock className="w-4 h-4" />;
+    }
+  };
 
   return (
     <div className="min-h-screen bg-tactical-bg p-4 md:p-6" onClick={() => setNewArticleCount(0)}>

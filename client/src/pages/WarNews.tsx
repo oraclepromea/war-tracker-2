@@ -1,5 +1,15 @@
 import React, { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
+import { 
+  Activity, 
+  AlertTriangle, 
+  Filter, 
+  ExternalLink, 
+  Clock,
+  MapPin,
+  Users,
+  Crosshair
+} from 'lucide-react'
 
 // Types
 interface WarEvent {
@@ -38,6 +48,11 @@ const formatTimeAgo = (date: string): string => {
   if (diffInMinutes < 60) return `${diffInMinutes}m ago`;
   if (diffInMinutes < 1440) return `${Math.floor(diffInMinutes / 60)}h ago`;
   return `${Math.floor(diffInMinutes / 1440)}d ago`;
+};
+
+// Fix: Replace format function with formatTimeAgo
+const formatDate = (date: string): string => {
+  return formatTimeAgo(date);
 };
 
 const WarNews: React.FC = () => {
@@ -559,7 +574,7 @@ const WarNews: React.FC = () => {
                 <div>
                   <h4 className="font-medium text-tactical-muted mb-1">Processed</h4>
                   <p className="text-sm text-tactical-muted">
-                    {format(new Date(selectedEvent.processed_at), 'MMM dd, yyyy HH:mm:ss')}
+                    {formatDate(selectedEvent.processed_at)}
                   </p>
                 </div>
               </div>
