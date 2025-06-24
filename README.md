@@ -464,3 +464,4 @@ npx supabase functions list
 - **🎯 War Intel Dashboard**: Comprehensive event tracking and filtering
 - **🗺️ Geographic Mapping**: GPS coordinates for events
 - **📊 Threat Assessment**: Color-coded threat levels and confidence scores# Updated Tue Jun 24 16:56:57 -04 2025
+# Build configured via Netlify dashboard - Tue Jun 24 17:21:10 -04 2025
