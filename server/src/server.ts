@@ -4,8 +4,8 @@ import { createServer } from 'http';
 import { Server } from 'socket.io';
 import { EnhancedDataSourceManager } from './services/enhancedDataSources';
 import { AIEventAnalyzer } from './services/aiAnalyzer';
+import app from './app';
 
-const app = express();
 const server = createServer(app);
 const io = new Server(server, {
   cors: {
@@ -283,16 +283,18 @@ app.get('/api/events/multilang', async (req, res) => {
 });
 
 // Start the server and aggregation
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT || 8080;
 
-server.listen(PORT, async () => {
+app.listen(PORT, () => {
   console.log(`🚀 War Tracker API Server running on port ${PORT}`);
   console.log(`📡 WebSocket server ready for real-time events`);
   
   // Start continuous aggregation after server starts
-  await startContinuousAggregation();
-  
-  console.log('✅ All monitoring systems active');
+  startContinuousAggregation().then(() => {
+    console.log('✅ All monitoring systems active');
+  }).catch(error => {
+    console.error('Error starting continuous aggregation:', error);
+  });
 });
 
 // Make sure this file exports the app or starts the server

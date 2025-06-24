@@ -27,6 +27,7 @@ router.get('/', (req, res) => {
 router.get('/api/news', (req, res) => {
   // Return cached news data
   res.json({
+  
     success: true,
     data: [], // Your news data here
     timestamp: new Date().toISOString()

@@ -5,13 +5,8 @@
   "main": "dist/index.js",
   "scripts": {
     "start": "node dist/server.js",
-    "dev": "ts-node-dev --respawn --transpile-only src/index.ts",
-    "build": "tsc --outDir dist",
-    "build:check": "tsc --noEmit",
-    "build:verbose": "tsc --outDir dist --listFiles",
-    "test": "jest",
-    "fetch-rss": "node ../scripts/rss-fetcher.js",
-    "fetch-rss:dry": "node ../scripts/rss-fetcher.js --dry-run"
+    "dev": "ts-node-dev --respawn --transpile-only src/server.ts",
+    "build": "tsc --outDir dist"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.50.0",

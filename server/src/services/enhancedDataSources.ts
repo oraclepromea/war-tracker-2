@@ -60,20 +60,8 @@ export class EnhancedDataSourceManager {
   private timeout: number = 15000; // 15 seconds timeout
   private parser: Parser = new Parser();
   
-  // MASSIVELY EXPANDED data sources including government and social media
+  // WORKING RSS SOURCES ONLY
   private dataSources: DataSource[] = [
-    // ENGLISH RSS SOURCES
-    {
-      id: 'reuters-world',
-      name: 'Reuters World News',
-      type: 'rss',
-      url: 'https://feeds.reuters.com/reuters/worldNews',
-      language: 'en',
-      region: ['global'],
-      active: true,
-      reliability: 0.95,
-      lastUpdate: new Date().toISOString()
-    },
     {
       id: 'bbc-world',
       name: 'BBC World News',
@@ -86,226 +74,47 @@ export class EnhancedDataSourceManager {
       lastUpdate: new Date().toISOString()
     },
     {
-      id: 'ap-news',
-      name: 'Associated Press',
+      id: 'aljazeera-en',
+      name: 'Al Jazeera English',
       type: 'rss',
-      url: 'https://feeds.apnews.com/ApNews/World',
+      url: 'https://www.aljazeera.com/xml/rss/all.xml',
       language: 'en',
       region: ['global'],
-      active: true,
-      reliability: 0.94,
-      lastUpdate: new Date().toISOString()
-    },
-    {
-      id: 'cnn-world',
-      name: 'CNN World News',
-      type: 'rss',
-      url: 'http://rss.cnn.com/rss/edition.rss',
-      language: 'en',
-      region: ['global'],
-      active: true,
-      reliability: 0.87,
-      lastUpdate: new Date().toISOString()
-    },
-
-    // US GOVERNMENT SOURCES
-    {
-      id: 'pentagon-news',
-      name: 'US Department of Defense',
-      type: 'government',
-      url: 'https://www.defense.gov/DesktopModules/ArticleCS/RSS.ashx?ContentType=1&Site=945&max=20',
-      language: 'en',
-      region: ['global', 'us'],
-      active: true,
-      reliability: 0.98,
-      lastUpdate: new Date().toISOString()
-    },
-    {
-      id: 'state-dept',
-      name: 'US State Department',
-      type: 'government',
-      url: 'https://www.state.gov/rss-feeds/',
-      language: 'en',
-      region: ['global', 'us'],
-      active: true,
-      reliability: 0.97,
-      lastUpdate: new Date().toISOString()
-    },
-    {
-      id: 'nato-news',
-      name: 'NATO Official News',
-      type: 'government',
-      url: 'https://www.nato.int/rss/news.xml',
-      language: 'en',
-      region: ['europe', 'global'],
-      active: true,
-      reliability: 0.98,
-      lastUpdate: new Date().toISOString()
-    },
-
-    // UKRAINE SOURCES
-    {
-      id: 'ukraine-defense-en',
-      name: 'Ukraine Ministry of Defense (EN)',
-      type: 'government',
-      url: 'https://www.mil.gov.ua/en/news/',
-      language: 'en',
-      region: ['ukraine', 'eastern_europe'],
       active: true,
       reliability: 0.90,
       lastUpdate: new Date().toISOString()
     },
     {
-      id: 'ukraine-defense-uk',
-      name: 'Ukraine Ministry of Defense (UA)',
-      type: 'government',
-      url: 'https://www.mil.gov.ua/news/',
-      language: 'uk',
-      region: ['ukraine', 'eastern_europe'],
-      active: true,
-      reliability: 0.92,
-      lastUpdate: new Date().toISOString()
-    },
-    {
-      id: 'kyiv-independent',
-      name: 'Kyiv Independent',
+      id: 'guardian-world',
+      name: 'The Guardian World',
       type: 'rss',
-      url: 'https://kyivindependent.com/rss/',
+      url: 'https://www.theguardian.com/world/rss',
       language: 'en',
-      region: ['ukraine', 'eastern_europe'],
+      region: ['global'],
       active: true,
       reliability: 0.88,
       lastUpdate: new Date().toISOString()
     },
-
-    // ISRAEL SOURCES
     {
-      id: 'idf-en',
-      name: 'Israel Defense Forces (EN)',
-      type: 'government',
-      url: 'https://www.idf.il/en/mini-sites/wars-and-operations/',
-      language: 'en',
-      region: ['israel', 'middle_east'],
-      active: true,
-      reliability: 0.93,
-      lastUpdate: new Date().toISOString()
-    },
-    {
-      id: 'idf-he',
-      name: 'Israel Defense Forces (HE)',
-      type: 'government',
-      url: 'https://www.idf.il/he/',
-      language: 'he',
-      region: ['israel', 'middle_east'],
-      active: true,
-      reliability: 0.94,
-      lastUpdate: new Date().toISOString()
-    },
-    {
-      id: 'times-israel',
-      name: 'Times of Israel',
+      id: 'npr-world',
+      name: 'NPR World',
       type: 'rss',
-      url: 'https://www.timesofisrael.com/feed/',
+      url: 'https://feeds.npr.org/1004/rss.xml',
       language: 'en',
-      region: ['israel', 'middle_east'],
-      active: true,
-      reliability: 0.87,
-      lastUpdate: new Date().toISOString()
-    },
-
-    // ARABIC SOURCES
-    {
-      id: 'aljazeera-ar',
-      name: 'Al Jazeera Arabic',
-      type: 'rss',
-      url: 'https://www.aljazeera.net/rss.xml',
-      language: 'ar',
-      region: ['middle_east', 'arab_world'],
+      region: ['global'],
       active: true,
       reliability: 0.85,
       lastUpdate: new Date().toISOString()
     },
     {
-      id: 'alarabiya-ar',
-      name: 'Al Arabiya',
+      id: 'dw-english',
+      name: 'DW English',
       type: 'rss',
-      url: 'https://www.alarabiya.net/rss.xml',
-      language: 'ar',
-      region: ['middle_east', 'arab_world'],
-      active: true,
-      reliability: 0.83,
-      lastUpdate: new Date().toISOString()
-    },
-    {
-      id: 'ahram-ar',
-      name: 'Al Ahram',
-      type: 'rss',
-      url: 'http://www.ahram.org.eg/rss/ahram.xml',
-      language: 'ar',
-      region: ['middle_east', 'egypt'],
-      active: true,
-      reliability: 0.80,
-      lastUpdate: new Date().toISOString()
-    },
-
-    // RUSSIAN SOURCES
-    {
-      id: 'rt-ru',
-      name: 'RT Russian',
-      type: 'rss',
-      url: 'https://russian.rt.com/rss',
-      language: 'ru',
-      region: ['russia', 'eastern_europe'],
-      active: true,
-      reliability: 0.70, // Lower due to potential bias
-      lastUpdate: new Date().toISOString()
-    },
-    {
-      id: 'interfax-ru',
-      name: 'Interfax Russia',
-      type: 'rss',
-      url: 'https://www.interfax.ru/rss.asp',
-      language: 'ru',
-      region: ['russia', 'eastern_europe'],
-      active: true,
-      reliability: 0.78,
-      lastUpdate: new Date().toISOString()
-    },
-    {
-      id: 'tass-ru',
-      name: 'TASS Russian',
-      type: 'rss',
-      url: 'https://tass.ru/rss/v2.xml',
-      language: 'ru',
-      region: ['russia', 'eastern_europe'],
-      active: true,
-      reliability: 0.75,
-      lastUpdate: new Date().toISOString()
-    },
-
-    // SOCIAL MEDIA / OSINT SOURCES
-    {
-      id: 'osint-twitter',
-      name: 'OSINT Twitter Aggregator',
-      type: 'social',
-      url: 'https://api.twitter.com/2/tweets/search/recent',
+      url: 'https://rss.dw.com/xml/rss-en-world',
       language: 'en',
       region: ['global'],
       active: true,
-      reliability: 0.70,
-      lastUpdate: new Date().toISOString()
-    },
-
-    // TELEGRAM CHANNELS
-    {
-      id: 'telegram-intel',
-      name: 'Intelligence Telegram Channels',
-      type: 'telegram',
-      url: 'telegram://resolve?domain=intelligence',
-      language: 'en',
-      region: ['global'],
-      active: true,
-      reliability: 0.65,
+      reliability: 0.82,
       lastUpdate: new Date().toISOString()
     }
   ];
@@ -404,11 +213,12 @@ export class EnhancedDataSourceManager {
       const response = await fetch(url, {
         method: 'GET',
         headers: {
-          'User-Agent': 'War Tracker 2.0 News Aggregator (wartracker@example.com)',
+          'User-Agent': 'Mozilla/5.0 (compatible; War-Tracker-2.0/1.0; +https://wartracker.app)',
           'Accept': 'application/rss+xml, application/xml, text/xml, */*',
           'Accept-Language': 'en-US,en;q=0.9',
+          'Cache-Control': 'no-cache',
         },
-        signal: AbortSignal.timeout(this.timeout)
+        signal: AbortSignal.timeout(10000)
       });
 
       if (!response.ok) {
@@ -416,8 +226,15 @@ export class EnhancedDataSourceManager {
       }
 
       const xml = await response.text();
+      
+      // Basic validation
+      if (!xml.includes('<rss') && !xml.includes('<feed')) {
+        throw new Error('Invalid RSS/XML format');
+      }
+
       const feed = await this.parser.parseString(xml);
       
+      console.log(`✅ ${name}: Successfully fetched ${feed.items?.length || 0} items`);
       return feed.items || [];
     } catch (error: any) {
       if (error.name === 'TimeoutError') {
@@ -425,11 +242,11 @@ export class EnhancedDataSourceManager {
       } else if (error.message.includes('getaddrinfo ENOTFOUND')) {
         console.log(`❌ ${name}: DNS resolution failed`);
       } else if (error.message.includes('403')) {
-        console.log(`❌ ${name}: Access forbidden - may need different User-Agent`);
+        console.log(`❌ ${name}: Access forbidden`);
       } else if (error.message.includes('404')) {
         console.log(`❌ ${name}: Feed not found`);
       } else {
-        console.log(`❌ Error fetching RSS from ${name}:`, error.message);
+        console.log(`❌ ${name}: ${error.message}`);
       }
       return [];
     }
