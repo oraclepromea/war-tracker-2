@@ -64,13 +64,23 @@ export class ArticlesService {
 
   // Manually trigger RSS fetch (calls the edge function)
   static async triggerRSSFetch(): Promise<any> {
-    const { data, error } = await supabase.functions.invoke('rssFetcher')
+    try {
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/rssFetcher`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+          'Content-Type': 'application/json'
+        }
+      });
 
-    if (error) {
-      console.error('Error triggering RSS fetch:', error)
-      throw error
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error triggering RSS fetch:', error);
+      throw error;
     }
-
-    return data
   }
 }

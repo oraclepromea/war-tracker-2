@@ -6,12 +6,14 @@ const app = express();
 // CORS configuration for production and development
 app.use(cors({
   origin: [
-    process.env.FRONTEND_URL || 'https://war-tracker-frontend.netlify.app',
+    'https://war-tracker-2.netlify.app',
+    'https://war-tracker-20-production.up.railway.app',
     'http://localhost:3000',
     'http://localhost:5173'
   ],
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  credentials: true
 }));
 
 app.use(express.json());

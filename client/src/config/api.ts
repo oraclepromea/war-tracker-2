@@ -15,7 +15,10 @@ export const API_ENDPOINTS = {
 // Enhanced fetch with error handling
 export async function apiRequest(endpoint: string, options: RequestInit = {}) {
   try {
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+    const url = `${API_BASE_URL}${endpoint}`;
+    console.log(`🔍 API Request: ${url}`);
+    
+    const response = await fetch(url, {
       headers: {
         'Content-Type': 'application/json',
         ...options.headers,

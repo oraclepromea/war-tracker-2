@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import { apiRequest, API_ENDPOINTS } from '../../client/src/config/api';
+import { ArticlesService } from '../../client/src/services/articles';
 
 interface RSSArticle {
   id: string;
@@ -23,13 +24,14 @@ interface RSSSource {
   last_fetched: string;
 }
 
-export default function Live() {
+const Live = () => {
   const [articles, setArticles] = useState<RSSArticle[]>([]);
   const [sources, setSources] = useState<RSSSource[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
   const [isAutoRefresh, setIsAutoRefresh] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isUpdatingRSS, setIsUpdatingRSS] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -96,6 +98,26 @@ export default function Live() {
     }
   }, [isRefreshing]);
 
+  const handleRSSUpdate = async () => {
+    setIsUpdatingRSS(true);
+    try {
+      console.log('🔄 Triggering RSS update...');
+      const result = await ArticlesService.triggerRSSFetch();
+      console.log('✅ RSS update result:', result);
+      
+      // Refresh articles after RSS update
+      await fetchArticles();
+      
+      // Show success message
+      setError(null);
+    } catch (error) {
+      console.error('❌ RSS update failed:', error);
+      setError('Failed to update RSS feeds');
+    } finally {
+      setIsUpdatingRSS(false);
+    }
+  };
+
   const triggerFetchRSS = async () => {
     setLoading(true);
     try {
@@ -140,11 +162,52 @@ export default function Live() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="container mx-auto px-4 py-8">
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-3xl font-bold text-white">Live News Feed</h1>
+        <div className="flex gap-2">
+          <button
+            onClick={handleRSSUpdate}
+            disabled={isUpdatingRSS}
+            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+              isUpdatingRSS
+                ? 'bg-gray-600 text-gray-300 cursor-not-allowed'
+                : 'bg-blue-600 hover:bg-blue-700 text-white'
+            }`}
+          >
+            {isUpdatingRSS ? (
+              <>
+                <span className="animate-spin inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full mr-2"></span>
+                Updating RSS...
+              </>
+            ) : (
+              '📡 RSS Update'
+            )}
+          </button>
+          <button
+            onClick={fetchArticles}
+            disabled={isRefreshing}
+            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+              isRefreshing
+                ? 'bg-gray-600 text-gray-300 cursor-not-allowed'
+                : 'bg-green-600 hover:bg-green-700 text-white'
+            }`}
+          >
+            {isRefreshing ? (
+              <>
+                <span className="animate-spin inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full mr-2"></span>
+                Refreshing...
+              </>
+            ) : (
+              '🔄 Update Now'
+            )}
+          </button>
+        </div>
+      </div>
+
       {/* Header Controls */}
-      <div className="bg-white rounded-lg shadow p-6">
+      <div className="bg-white rounded-lg shadow p-6 mb-6">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-2xl font-bold text-gray-900">Live RSS Feed Monitor</h2>
           <div className="flex items-center space-x-4">
             <div className="flex items-center space-x-2">
               <input
@@ -158,13 +221,6 @@ export default function Live() {
                 Auto-refresh
               </label>
             </div>
-            <button
-              onClick={triggerFetchRSS}
-              disabled={loading}
-              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
-            >
-              {loading ? 'Fetching...' : 'Fetch Latest'}
-            </button>
           </div>
         </div>
 
@@ -246,4 +302,6 @@ export default function Live() {
       </div>
     </div>
   );
-}
+};
+
+export default Live;

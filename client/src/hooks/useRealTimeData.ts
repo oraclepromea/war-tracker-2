@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { API_BASE_URL } from '../lib/api';
+import { apiRequest, API_ENDPOINTS, API_BASE_URL } from '../config/api';
 
 // FIXED: Add missing interfaces and functions
 interface BackendData {
@@ -15,34 +15,6 @@ const getFallbackData = (): BackendData => ({
   weapons: [],
   status: 'offline'
 });
-
-const apiRequest = async (endpoint: string, options: RequestInit = {}) => {
-  const url = `${API_BASE_URL}${endpoint}`;
-  
-  try {
-    const response = await fetch(url, {
-      ...options,
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-        ...options.headers,
-      },
-      mode: 'cors',
-    });
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    return await response.json();
-  } catch (error) {
-    console.error(`API request failed for ${endpoint}:`, error);
-    throw error;
-  }
-};
 
 export const useRealTimeData = () => {
   // FIXED: Add missing state variables
@@ -81,6 +53,27 @@ export const useRealTimeData = () => {
       setBackendData(getFallbackData());
     }
   }, []);
+
+  const checkAPIHealth = async (): Promise<boolean> => {
+    try {
+      await apiRequest('/health');
+      console.log('✅ API is healthy');
+      return true;
+    } catch (error) {
+      console.log('⚠️ Backend not available:', error);
+      return false;
+    }
+  };
+
+  const fetchEvents = async () => {
+    try {
+      const data = await apiRequest(API_ENDPOINTS.events);
+      // ...existing code...
+    } catch (error) {
+      console.error('Failed to fetch events:', error);
+      // ...existing code...
+    }
+  };
 
   // FIXED: Use fetchBackendData in useEffect
   useEffect(() => {
