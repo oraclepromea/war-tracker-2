@@ -44,5 +44,5 @@ COPY --from=client-builder /app/client/dist ./public
 RUN addgroup -g 1001 -S nodejs && adduser -S wartracker -u 1001
 RUN chown -R wartracker:nodejs /app
 USER wartracker
-EXPOSE 3001
+EXPOSE 8080
 CMD ["dumb-init", "node", "dist/server.js"]

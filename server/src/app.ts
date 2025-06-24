@@ -12,8 +12,7 @@ app.use(cors({
   origin: [
     'http://localhost:3000',
     'http://localhost:5173',
-    'https://war-tracker-20-production.up.railway.app',
-    'https://your-frontend-domain.vercel.app'
+    'https://war-tracker-20-production.up.railway.app'
   ],
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   allowedHeaders: ['Content-Type', 'Authorization']
@@ -23,12 +22,14 @@ app.use(express.json());
 
 // Health check endpoint - MUST BE FIRST
 app.get('/api/health', (req, res) => {
-  res.json({ 
+  res.status(200).json({ 
     success: true, 
     status: 'healthy',
     timestamp: new Date().toISOString(),
     version: '2.0.0',
-    uptime: process.uptime()
+    uptime: process.uptime(),
+    port: process.env.PORT || 8080,
+    environment: process.env.NODE_ENV || 'development'
   });
 });
 
@@ -65,13 +66,6 @@ app.get('/api/live', (req, res) => {
     data: [],
     timestamp: new Date().toISOString()
   });
-});
-
-const PORT = process.env.PORT || 3001;
-
-app.listen(PORT, () => {
-  console.log(`🚀 War Tracker API running on port ${PORT}`);
-  console.log(`📊 Health check: http://localhost:${PORT}/api/health`);
 });
 
 export default app;
