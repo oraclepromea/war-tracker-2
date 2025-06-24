@@ -12,6 +12,3 @@ interface ImportMetaEnv {
 interface ImportMeta {
   readonly env: ImportMetaEnv
 }
-
-// Declare API URL helper function
-export declare function getApiBaseUrl(): string;

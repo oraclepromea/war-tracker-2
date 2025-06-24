@@ -1,5 +1,5 @@
 # Node.js API
-FROM node:18-alpine AS server
+FROM node:22-alpine AS server
 
 WORKDIR /app/server
 
@@ -15,23 +15,17 @@ COPY server/tsconfig.json ./
 RUN npm run build -- --noEmit false
 
 # Client build stage
-FROM node:18-alpine AS client-builder
-
+FROM node:22-alpine AS client-builder
+RUN apk update && apk upgrade && apk add --no-cache dumb-init
 WORKDIR /app/client
-
-# Copy package files
 COPY client/package*.json ./
-RUN npm ci
-
-# Copy source code
-COPY client ./
-
-
-# Build React app
-RUN npm run build -- --skip-tsc
+RUN npm ci --only=production
+COPY client/ ./
+RUN npm run build
 
 # Server build stage  
-FROM node:18-alpine AS server
+FROM node:22-alpine AS backend-server
+RUN apk update && apk upgrade && apk add --no-cache dumb-init
 WORKDIR /app/server
 COPY server/package*.json ./
 RUN npm ci --only=production
@@ -39,31 +33,16 @@ COPY server/src ./src
 COPY server/tsconfig.json ./
 RUN npm run build
 
-# Final production image
-FROM node:18-alpine
-
-RUN apk add --no-cache dumb-init
-
+# Production stage
+FROM node:22-alpine AS production
+RUN apk update && apk upgrade && apk add --no-cache dumb-init
 WORKDIR /app
-
-# Copy server build
-COPY --from=server /app/server/dist ./server
-COPY --from=server /app/server/node_modules ./node_modules
-COPY --from=server /app/server/package*.json ./
-
-# Copy client build
+COPY --from=backend-server /app/server/dist ./server
+COPY --from=backend-server /app/server/node_modules ./node_modules
+COPY --from=backend-server /app/server/package*.json ./
 COPY --from=client-builder /app/client/dist ./public
-
-# Create non-root user
-RUN addgroup -g 1001 -S nodejs && \
-    adduser -S wartracker -u 1001
-
-# Set ownership
+RUN addgroup -g 1001 -S nodejs && adduser -S wartracker -u 1001
 RUN chown -R wartracker:nodejs /app
 USER wartracker
-
-EXPOSE 5000
-
-ENV NODE_ENV=production
-
+EXPOSE 3001
 CMD ["dumb-init", "node", "server/index.js"]

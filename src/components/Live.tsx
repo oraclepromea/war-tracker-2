@@ -54,6 +54,8 @@ export default function Live() {
       )
       .subscribe();
 
+    console.log(`🔗 Live: Using WebSocket URL: ${(import.meta as any).env?.VITE_WS_URL || 'ws://localhost:3001'}`);
+
     return () => {
       clearInterval(interval);
       subscription.unsubscribe();
@@ -81,7 +83,7 @@ export default function Live() {
     try {
       console.log('🔄 Live: Fetching articles from server...');
       
-      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3001'}/api/live`);
+      const response = await fetch(`${(import.meta as any).env?.VITE_API_URL || 'http://localhost:3001'}/api/live`);
       
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
@@ -108,12 +110,12 @@ export default function Live() {
     setLoading(true);
     try {
       const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/fetch-rss`,
+        `${(import.meta as any).env.VITE_SUPABASE_URL}/functions/v1/fetch-rss`,
         {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
+            'Authorization': `Bearer ${(import.meta as any).env.VITE_SUPABASE_ANON_KEY}`
           }
         }
       );
