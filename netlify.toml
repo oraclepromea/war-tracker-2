@@ -1,6 +1,6 @@
 [build]
-  command = "npm run build"
-  publish = "client/dist"
+  command = "cd frontend && npm ci && npm run build"
+  publish = "frontend/dist"
 
 [[redirects]]
   from = "/api/*"
