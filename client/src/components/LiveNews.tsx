@@ -516,16 +516,6 @@ export function LiveNews() {
     );
   }
 
-  // Fix: Replace Zap with Activity icon
-  const getCategoryIcon = (category: string) => {
-    switch (category?.toLowerCase()) {
-      case 'military': return <Activity className="w-4 h-4" />;
-      case 'civilian': return <AlertTriangle className="w-4 h-4" />;
-      case 'diplomatic': return <Globe className="w-4 h-4" />;
-      default: return <Clock className="w-4 h-4" />;
-    }
-  };
-
   return (
     <div className="min-h-screen bg-tactical-bg p-4 md:p-6" onClick={() => setNewArticleCount(0)}>
       <div className="max-w-7xl mx-auto">

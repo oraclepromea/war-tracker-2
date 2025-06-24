@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { apiRequest, API_ENDPOINTS, API_BASE_URL } from '../config/api';
+import { apiRequest, API_BASE_URL } from '../config/api';
 
 // FIXED: Add missing interfaces and functions
 interface BackendData {
@@ -16,7 +16,7 @@ const getFallbackData = (): BackendData => ({
   status: 'offline'
 });
 
-export const useRealTimeData = () => {
+export function useRealTimeData() {
   // FIXED: Add missing state variables
   const [backendData, setBackendData] = useState<BackendData>(getFallbackData());
   const [backendStatus, setBackendStatus] = useState<'online' | 'offline' | 'checking'>('checking');
@@ -53,27 +53,6 @@ export const useRealTimeData = () => {
       setBackendData(getFallbackData());
     }
   }, []);
-
-  const checkAPIHealth = async (): Promise<boolean> => {
-    try {
-      await apiRequest('/health');
-      console.log('✅ API is healthy');
-      return true;
-    } catch (error) {
-      console.log('⚠️ Backend not available:', error);
-      return false;
-    }
-  };
-
-  const fetchEvents = async () => {
-    try {
-      const data = await apiRequest(API_ENDPOINTS.events);
-      // ...existing code...
-    } catch (error) {
-      console.error('Failed to fetch events:', error);
-      // ...existing code...
-    }
-  };
 
   // FIXED: Use fetchBackendData in useEffect
   useEffect(() => {
