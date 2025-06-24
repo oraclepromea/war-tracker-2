@@ -1,15 +1,5 @@
-import React, { useState, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
-import { 
-  Activity, 
-  AlertTriangle, 
-  Filter, 
-  ExternalLink, 
-  Clock,
-  MapPin,
-  Users,
-  Crosshair
-} from 'lucide-react'
 
 // Types
 interface WarEvent {
@@ -39,6 +29,14 @@ interface Filters {
   event_type: string
 }
 
+interface Article {
+  id: string
+  title: string
+  url?: string
+  fetched_at: string
+  is_processed?: boolean
+}
+
 // Simple date formatter to replace date-fns
 const formatTimeAgo = (date: string): string => {
   const now = new Date();
@@ -55,7 +53,7 @@ const formatDate = (date: string): string => {
   return formatTimeAgo(date);
 };
 
-const WarNews: React.FC = () => {
+export function WarNews() {
   const [events, setEvents] = useState<WarEvent[]>([])
   const [selectedEvent, setSelectedEvent] = useState<WarEvent | null>(null)
   const [loading, setLoading] = useState(true)
@@ -96,7 +94,7 @@ const WarNews: React.FC = () => {
       setError(null)
       console.log('🎯 Fetching war events from Supabase...')
       
-      let query = supabase!
+      let query = supabase
         .from('war_events')
         .select('*')
         .order('timestamp', { ascending: false })
@@ -140,7 +138,7 @@ const WarNews: React.FC = () => {
         console.log('🔄 No war events found, fetching real processed articles...')
         
         // Get REAL processed articles, not mock data
-        const { data: articles, error: articlesError } = await supabase!
+        const { data: articles, error: articlesError } = await supabase
           .from('rss_articles')
           .select('*')
           .eq('is_processed', true)
@@ -151,7 +149,7 @@ const WarNews: React.FC = () => {
           console.log(`✅ Found ${articles.length} real processed articles`)
           
           // Convert real articles to war events format
-          const realEvents: WarEvent[] = articles.map(article => ({
+          const realEvents: WarEvent[] = articles.map((article: Article) => ({
             id: article.id,
             event_type: 'diplomatic' as const,
             country: 'Unknown',
@@ -177,8 +175,8 @@ const WarNews: React.FC = () => {
         } else {
           // If no processed articles, show recent unprocessed articles
           console.log('🔄 No processed articles, showing recent unprocessed articles...')
-          const { data: recentArticles, error: recentError } = await supabase!
-            .from('rss_articles')  // Remove schema prefix
+          const { data: recentArticles, error: recentError } = await supabase
+            .from('rss_articles')
             .select('*')
             .order('fetched_at', { ascending: false })
             .limit(10)
@@ -186,7 +184,7 @@ const WarNews: React.FC = () => {
           if (!recentError && recentArticles?.length > 0) {
             console.log(`✅ Found ${recentArticles.length} recent articles to display`)
             
-            const recentEvents: WarEvent[] = recentArticles.map(article => ({
+            const recentEvents: WarEvent[] = recentArticles.map((article: Article) => ({
               id: article.id,
               event_type: 'diplomatic' as const,
               country: 'Pending Analysis',
@@ -229,7 +227,7 @@ const WarNews: React.FC = () => {
   useEffect(() => {
     if (!isAutoRefresh) return
 
-    const subscription = supabase && supabase
+    const subscription = supabase
       .channel('war_news')
       .on(
         'postgres_changes',
@@ -238,7 +236,7 @@ const WarNews: React.FC = () => {
           schema: 'public',
           table: 'war_events'
         },
-        (payload) => {
+        (payload: { new: WarEvent }) => {
           console.log('New war event:', payload.new)
           setEvents(prev => [payload.new as WarEvent, ...prev].slice(0, 50))
         }
@@ -267,7 +265,7 @@ const WarNews: React.FC = () => {
 
   // Handle filter changes
   const handleFilterChange = (key: keyof Filters, value: string) => {
-    setFilters(prev => ({ ...prev, [key]: value }))
+    setFilters((prev: Filters) => ({ ...prev, [key]: value }))
   }
 
   // Format coordinates

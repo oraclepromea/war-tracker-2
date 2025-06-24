@@ -4,7 +4,7 @@
 // console.log('🔗 API Base URL:', API_BASE_URL);
 
 // FIXED: Update API configuration for production deployment
-export const API_BASE_URL = process.env.NODE_ENV === 'production' 
+export const API_BASE_URL = import.meta.env.NODE_ENV === 'production' 
   ? 'https://war-tracker-20-production.up.railway.app'
   : 'http://localhost:8000';
 
@@ -373,7 +373,7 @@ export const TELEGRAM_INTELLIGENCE_CHANNELS = [
 
 // Translation service configuration
 export const TRANSLATION_CONFIG = {
-  apiKey: process.env.REACT_APP_GOOGLE_TRANSLATE_API_KEY,
+  apiKey: import.meta.env.VITE_GOOGLE_TRANSLATE_API_KEY,
   endpoint: 'https://translation.googleapis.com/language/translate/v2',
   supportedLanguages: {
     'ar': 'Arabic',
