@@ -158,6 +158,6 @@ export function LiveEventsFeed() {
       </CardContent>
     </Card>
   );
-};
+}
 
 export default LiveEventsFeed;
