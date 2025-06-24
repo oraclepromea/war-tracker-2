@@ -1,82 +1,125 @@
 // Get API base URL from environment variable
-export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://war-tracker-20-production.up.railway.app';
+// export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://war-tracker-20-production.up.railway.app';
 
-console.log('🔗 API Base URL:', API_BASE_URL);
+// console.log('🔗 API Base URL:', API_BASE_URL);
 
-export const api = {
-  // Health check
-  async checkHealth() {
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/health`);
-      return response.ok;
-    } catch (error) {
-      console.error('Health check failed:', error);
-      return false;
+// FIXED: Update API configuration for production deployment
+export const API_BASE_URL = process.env.NODE_ENV === 'production' 
+  ? 'https://war-tracker-20-production.up.railway.app'
+  : 'http://localhost:8000';
+
+// FIXED: Add proper CORS headers and error handling
+export const apiRequest = async (endpoint: string, options: RequestInit = {}) => {
+  const url = `${API_BASE_URL}${endpoint}`;
+  
+  try {
+    const response = await fetch(url, {
+      ...options,
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        // Add CORS headers
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+        ...options.headers,
+      },
+      mode: 'cors', // Explicitly set CORS mode
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
     }
-  },
 
-  // News endpoints
-  async getNews() {
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/news`);
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
-      return await response.json();
-    } catch (error) {
-      console.error('Failed to fetch news:', error);
-      throw error;
-    }
-  },
-
-  // Events endpoint
-  async getEvents() {
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/events`);
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
-      return await response.json();
-    } catch (error) {
-      console.error('Failed to fetch events:', error);
-      throw error;
-    }
-  },
-
-  // Conflicts endpoint
-  async getConflicts() {
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/conflicts`);
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
-      return await response.json();
-    } catch (error) {
-      console.error('Failed to fetch conflicts:', error);
-      throw error;
-    }
-  },
-
-  // Sources endpoint
-  async getSources() {
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/sources`);
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
-      return await response.json();
-    } catch (error) {
-      console.error('Failed to fetch sources:', error);
-      throw error;
-    }
-  },
-
-  // Sync RSS feeds
-  async syncRSS() {
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/sync-rss`, {
-        method: 'POST'
-      });
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
-      return await response.json();
-    } catch (error) {
-      console.error('Failed to sync RSS:', error);
-      throw error;
-    }
+    return await response.json();
+  } catch (error) {
+    console.error(`API request failed for ${endpoint}:`, error);
+    throw error;
   }
 };
+
+// FIXED: Add fallback data for when API is unavailable
+export const getFallbackData = () => ({
+  articles: [],
+  events: [],
+  weapons: [],
+  status: 'offline'
+});
+
+// export const api = {
+//   // Health check
+//   async checkHealth() {
+//     try {
+//       const response = await fetch(`${API_BASE_URL}/api/health`);
+//       return response.ok;
+//     } catch (error) {
+//       console.error('Health check failed:', error);
+//       return false;
+//     }
+//   },
+
+//   // News endpoints
+//   async getNews() {
+//     try {
+//       const response = await fetch(`${API_BASE_URL}/api/news`);
+//       if (!response.ok) throw new Error(`HTTP ${response.status}`);
+//       return await response.json();
+//     } catch (error) {
+//       console.error('Failed to fetch news:', error);
+//       throw error;
+//     }
+//   },
+
+//   // Events endpoint
+//   async getEvents() {
+//     try {
+//       const response = await fetch(`${API_BASE_URL}/api/events`);
+//       if (!response.ok) throw new Error(`HTTP ${response.status}`);
+//       return await response.json();
+//     } catch (error) {
+//       console.error('Failed to fetch events:', error);
+//       throw error;
+//     }
+//   },
+
+//   // Conflicts endpoint
+//   async getConflicts() {
+//     try {
+//       const response = await fetch(`${API_BASE_URL}/api/conflicts`);
+//       if (!response.ok) throw new Error(`HTTP ${response.status}`);
+//       return await response.json();
+//     } catch (error) {
+//       console.error('Failed to fetch conflicts:', error);
+//       throw error;
+//     }
+//   },
+
+//   // Sources endpoint
+//   async getSources() {
+//     try {
+//       const response = await fetch(`${API_BASE_URL}/api/sources`);
+//       if (!response.ok) throw new Error(`HTTP ${response.status}`);
+//       return await response.json();
+//     } catch (error) {
+//       console.error('Failed to fetch sources:', error);
+//       throw error;
+//     }
+//   },
+
+//   // Sync RSS feeds
+//   async syncRSS() {
+//     try {
+//       const response = await fetch(`${API_BASE_URL}/api/sync-rss`, {
+//         method: 'POST'
+//       });
+//       if (!response.ok) throw new Error(`HTTP ${response.status}`);
+//       return await response.json();
+//     } catch (error) {
+//       console.error('Failed to sync RSS:', error);
+//       throw error;
+//     }
+//   }
+// };
 
 // Enhanced RSS sources with international feeds and translation support
 export const RSS_SOURCES = [

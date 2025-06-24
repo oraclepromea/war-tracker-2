@@ -1,0 +1,38 @@
+name: Schema Validation
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  schema-check:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        
+    - name: Install dependencies
+      run: npm ci
+      
+    - name: Check for schema references
+      run: |
+        echo "Checking for problematic schema references..."
+        if grep -r "net\." --include="*.js" --include="*.ts" --include="*.sql" .; then
+          echo "❌ Found 'net.' schema references"
+          exit 1
+        fi
+        echo "✅ No problematic schema references found"
+        
+    - name: Verify database schema
+      if: github.ref == 'refs/heads/main'
+      run: npm run check-schemas
+      env:
+        SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+        SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}

@@ -359,7 +359,7 @@ Content: "${article.content.substring(0, 1000)}"`;
       processed_at: new Date().toISOString()
     };
 
-    console.log(`✅ War event: ${warEvent.event_type} in ${warEvent.country} (${warEvent.confidence}%)`);
+    console.log(`✅ War event created: ${warEvent.event_type} in ${warEvent.country} (${warEvent.confidence}% confidence)`);
     return warEvent;
 
   } catch (error) {
@@ -384,7 +384,12 @@ Deno.serve(async (req) => {
     // Use environment variables that Supabase provides automatically
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
+      {
+        db: {
+          schema: 'public' // Explicit default schema
+        }
+      }
     );
 
     const payload = await req.json().catch(() => null);
@@ -396,7 +401,7 @@ Deno.serve(async (req) => {
 
     // 1. Fetch article (only existing columns)
     const { data: article, error: fetchError } = await supabase
-      .from('rss_articles')
+      .from('rss_articles')  // Remove schema prefix
       .select('id, title, content, is_processed, published_at')
       .eq('id', payload.article_id)
       .single();
@@ -454,40 +459,28 @@ Deno.serve(async (req) => {
       is_processed: article.is_processed
     });
 
-    let insertedEvent = null;
+    let insertedEvent: WarEvent | null = null;
 
     if (warEvent) {
       // 5. Insert real war event
-      const { data: eventData, error: insertError } = await supabase
-        .from('war_events')
-        .insert({
-          source_article: payload.article_id,
-          event_type: warEvent.event_type,
-          country: warEvent.country,
-          region: warEvent.region,
-          latitude: warEvent.latitude,
-          longitude: warEvent.longitude,
-          casualties: warEvent.casualties,
-          weapons_used: warEvent.weapons_used,
-          confidence: warEvent.confidence,
-          threat_level: warEvent.threat_level,
-          timestamp: article.published_at || new Date().toISOString()
-        })
-        .select()
-        .single();
+      const { error: insertError } = await supabase
+        .from('war_events')  // Remove schema prefix
+        .insert([warEvent]);
 
       if (insertError) throw new Error(`Event insert failed: ${insertError.message}`);
-      insertedEvent = eventData;
+      insertedEvent = warEvent;
       console.log(`✅ Created war event: ${warEvent.event_type} in ${warEvent.country}`);
     } else {
       console.log("⏭️ AI determined article is not war-related");
     }
 
     // 6. Mark article as processed
-    await supabase
-      .from('rss_articles')
+    const { error: updateError } = await supabase
+      .from('rss_articles')  // Remove schema prefix
       .update({ is_processed: true })
-      .eq('id', payload.article_id);
+      .eq('id', article.id);
+
+    if (updateError) throw new Error(`Article update failed: ${updateError.message}`);
 
     console.log("Successfully processed article");
 

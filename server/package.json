@@ -7,7 +7,9 @@
     "dev": "ts-node --transpile-only src/index.ts",
     "build": "tsc",
     "start": "node dist/index.js",
-    "test": "jest"
+    "test": "jest",
+    "fetch-rss": "node ../scripts/rss-fetcher.js",
+    "fetch-rss:dry": "node ../scripts/rss-fetcher.js --dry-run"
   },
   "dependencies": {
     "compression": "^1.7.4",

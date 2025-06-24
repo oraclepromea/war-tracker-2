@@ -155,3 +155,7 @@ Thumbs.db
 # Turbo
 .turbo
 node_modules/
+
+# Prevent problematic JS files in TypeScript directories
+server/src/services/*.js
+!server/src/services/*.ts

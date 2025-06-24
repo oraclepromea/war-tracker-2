@@ -153,7 +153,7 @@ const WarNews: React.FC = () => {
           // If no processed articles, show recent unprocessed articles
           console.log('🔄 No processed articles, showing recent unprocessed articles...')
           const { data: recentArticles, error: recentError } = await supabase!
-            .from('rss_articles')
+            .from('rss_articles')  // Remove schema prefix
             .select('*')
             .order('fetched_at', { ascending: false })
             .limit(10)

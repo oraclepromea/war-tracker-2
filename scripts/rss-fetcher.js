@@ -50,7 +50,12 @@ function initializeSupabase() {
   try {
     const supabase = createClient(
       process.env.SUPABASE_URL,
-      process.env.SUPABASE_SERVICE_ROLE_KEY
+      process.env.SUPABASE_SERVICE_ROLE_KEY,
+      {
+        db: {
+          schema: 'public' // Explicit default schema
+        }
+      }
     );
     
     console.log('✅ Supabase client initialized');
@@ -80,7 +85,15 @@ if (!supabaseUrl || !supabaseServiceKey) {
   process.exit(1);
 }
 
-const supabase = createClient(supabaseUrl, supabaseServiceKey);
+const supabase = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY,
+  {
+    db: {
+      schema: 'public' // Explicit default schema
+    }
+  }
+);
 
 // Verified RSS feeds
 const RSS_FEEDS = [
@@ -247,7 +260,7 @@ async function processBatch(batch, sourceName) {
   // Get existing articles by URLs for this batch
   const urls = batch.map(article => article.url);
   const { data: existingArticles, error: fetchError } = await supabase
-    .from('rss_articles')
+    .from('rss_articles')  // Remove schema prefix
     .select('url, content_hash, is_processed')
     .in('url', urls);
 
@@ -280,7 +293,7 @@ async function processBatch(batch, sourceName) {
   // Batch insert new articles
   if (articlesToInsert.length > 0) {
     const { error: insertError } = await supabase
-      .from('rss_articles')
+      .from('rss_articles')  // Remove schema prefix
       .insert(articlesToInsert);
 
     if (insertError) {

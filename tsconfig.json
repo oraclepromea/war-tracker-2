@@ -37,6 +37,8 @@
     "src/server",
     "supabase/functions",
     "node_modules",
-    "dist"
+    "**/*.js",
+    "dist",
+    "build"
   ]
 }

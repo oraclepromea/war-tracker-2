@@ -7,9 +7,12 @@ import {
   AlertTriangle, 
   Shield, 
   TrendingUp, 
+  Activity, 
   Globe, 
   ChevronDown, 
   ChevronUp,
+  BarChart3, 
+  AlertCircle, 
   Zap,
   RefreshCw,
   Languages,
@@ -66,45 +69,13 @@ interface NewsFilters {
   };
   sortBy: 'date' | 'priority' | 'relevance' | 'source';
   sortOrder: 'asc' | 'desc';
+  // Legacy filters for compatibility
+  category: string;
+  source: string;
+  severity: string;
+  location: string;
+  threatLevel: string;
 }
-
-// Extract keywords from content
-const extractKeywords = (text: string): string[] => {
-  const keywords = text.toLowerCase()
-    .split(/\W+/)
-    .filter(word => word.length > 3)
-    .filter(word => !['that', 'with', 'have', 'this', 'will', 'been', 'from', 'they', 'know', 'want', 'been', 'good', 'much', 'some', 'time', 'very', 'when', 'come', 'here', 'just', 'like', 'long', 'make', 'many', 'over', 'such', 'take', 'than', 'them', 'well', 'were'].includes(word))
-    .slice(0, 5);
-  return [...new Set(keywords)];
-};
-
-// Determine threat level based on content
-const determineThreatLevel = (title: string, description: string, keywords?: string[]): 'critical' | 'high' | 'medium' | 'low' => {
-  const text = `${title} ${description}`.toLowerCase();
-  const keywordText = keywords ? keywords.join(' ').toLowerCase() : '';
-  const fullText = `${text} ${keywordText}`;
-  
-  if (fullText.match(/nuclear|wmd|chemical|biological|terror|explosion|bomb/)) return 'critical';
-  if (fullText.match(/attack|strike|killed|casualties|war|conflict|missile/)) return 'high';
-  if (fullText.match(/military|defense|sanctions|threat|warning/)) return 'medium';
-  return 'low';
-};
-
-// Format relative time
-const formatRelativeTime = (dateString: string): string => {
-  const now = new Date();
-  const date = new Date(dateString);
-  const diffInMs = now.getTime() - date.getTime();
-  const diffInMinutes = Math.floor(diffInMs / (1000 * 60));
-  const diffInHours = Math.floor(diffInMs / (1000 * 60 * 60));
-  const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24));
-
-  if (diffInMinutes < 1) return 'Just now';
-  if (diffInMinutes < 60) return `${diffInMinutes}m ago`;
-  if (diffInHours < 24) return `${diffInHours}h ago`;
-  if (diffInDays < 7) return `${diffInDays}d ago`;
-  return date.toLocaleDateString();
-};
 
 export function LiveNews() {
   const [articles, setArticles] = useState<NewsItem[]>([]);
@@ -118,7 +89,13 @@ export function LiveNews() {
     threatLevels: [],
     dateRange: { start: '', end: '' },
     sortBy: 'date',
-    sortOrder: 'desc'
+    sortOrder: 'desc',
+    // Legacy filters
+    category: '',
+    source: '',
+    severity: '',
+    location: '',
+    threatLevel: ''
   });
   const [currentPage, setCurrentPage] = useState(1);
   const [showFilters, setShowFilters] = useState(false);
@@ -134,13 +111,9 @@ export function LiveNews() {
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
   const [newArticleCount, setNewArticleCount] = useState(0);
 
-  // Constants
-  const itemsPerPage = 20;
-  
   // Get unique categories and languages
   const categories = Array.from(new Set(RSS_SOURCES.map(source => source.category)));
   const languages = Array.from(new Set(RSS_SOURCES.map(source => source.language)));
-  const uniqueSources = Array.from(new Set(articles.map(item => item.source)));
 
   // Enhanced filtering and sorting logic
   const getFilteredAndSortedNews = () => {
@@ -153,7 +126,7 @@ export function LiveNews() {
         item.title.toLowerCase().includes(searchTerm) ||
         item.description.toLowerCase().includes(searchTerm) ||
         item.source.toLowerCase().includes(searchTerm) ||
-        item.keywords?.some(keyword => keyword.toLowerCase().includes(searchTerm))
+        item.keywords?.some((keyword: string) => keyword.toLowerCase().includes(searchTerm))
       );
     }
 
@@ -199,9 +172,10 @@ export function LiveNews() {
           break;
         case 'priority':
           const priorityOrder: { [key in 'high' | 'medium' | 'low']: number } = { high: 3, medium: 2, low: 1 };
-          comparison = priorityOrder[b.priority] - priorityOrder[a.priority];
+          comparison = (priorityOrder[b.priority] || 1) - (priorityOrder[a.priority] || 1);
           break;
         case 'relevance':
+          // Combine confidence, threat level, and recency
           const getRelevanceScore = (item: NewsItem) => {
             const confidenceScore = item.confidence || 50;
             const threatScore = item.threatLevel === 'critical' ? 40 : 
@@ -227,10 +201,10 @@ export function LiveNews() {
   const filteredAndSortedNews = getFilteredAndSortedNews();
   
   // Pagination
-  const totalPages = Math.ceil(filteredAndSortedNews.length / itemsPerPage);
+  const totalPages = Math.ceil(filteredAndSortedNews.length / 20);
   const paginatedNews = filteredAndSortedNews.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
+    (currentPage - 1) * 20,
+    currentPage * 20
   );
 
   // Content hashing for deduplication
@@ -239,11 +213,144 @@ export function LiveNews() {
     return btoa(content).substring(0, 16);
   };
 
+  // Enhanced fetch with deduplication and full content
+  const fetchEnhancedNews = async () => {
+    try {
+      setLoading(true);
+      setLastUpdate(new Date());
+      console.log('📡 Fetching enhanced news with deduplication...');
+
+      const newContentHashes = new Set(contentHashes);
+      let totalNewArticles = 0;
+
+      const rssPromises = RSS_SOURCES.map(async (source) => {
+        try {
+          const response = await fetch(`${API_BASE_URL}/api/rss-proxy`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ url: source.url, source: source.name })
+          });
+
+          if (!response.ok) throw new Error(`Failed to fetch ${source.name}`);
+          
+          const data = await response.json();
+          let duplicatesCount = 0;
+          
+          const processedItems = await Promise.all(
+            data.items.slice(0, 15).map(async (item: any) => {
+              // Generate content hash for deduplication
+              const contentHash = generateContentHash(item);
+              
+              // Skip if duplicate
+              if (newContentHashes.has(contentHash)) {
+                duplicatesCount++;
+                return null;
+              }
+              newContentHashes.add(contentHash);
+              totalNewArticles++;
+
+              let title = item.title;
+              let description = item.description || item.summary || '';
+              const originalTitle = title;
+              const originalDescription = description;
+
+              // Extract keywords from content
+              const keywords = extractKeywords(title + ' ' + description);
+              
+              // Determine threat level based on content
+              const threatLevel = determineThreatLevel(title, description, keywords);
+
+              // Calculate reading time
+              const wordCount = (title + ' ' + description).split(' ').length;
+              const readingTime = Math.ceil(wordCount / 200);
+
+              return {
+                id: `${source.name}-${contentHash}`,
+                title,
+                originalTitle: source.needsTranslation ? originalTitle : undefined,
+                description,
+                originalDescription: source.needsTranslation ? originalDescription : undefined,
+                link: item.link,
+                pubDate: item.pubDate || new Date().toISOString(),
+                insertedAt: new Date().toISOString(),
+                source: source.name,
+                category: source.category,
+                language: source.language,
+                priority: source.priority as 'high' | 'medium' | 'low',
+                needsTranslation: source.needsTranslation,
+                translated: source.needsTranslation && translationEnabled,
+                confidence: calculateConfidence(title + ' ' + description, source.category),
+                tags: generateTags(title, description, source.category),
+                contentHash,
+                wordCount,
+                readingTime,
+                threatLevel,
+                keywords,
+                isNew: true
+              } as NewsItem;
+            })
+          );
+
+          const validItems = processedItems.filter(item => item !== null) as NewsItem[];
+          setDuplicatesRemoved((prev: number) => prev + duplicatesCount);
+
+          // Update source stats
+          setSourceStats(prev => {
+            const existing = prev.find(s => s.name === source.name);
+            const newStats = {
+              name: source.name,
+              category: source.category,
+              language: source.language,
+              articlesCount: validItems.length,
+              lastUpdate: new Date().toISOString(),
+              status: 'active' as const
+            };
+
+            if (existing) {
+              return prev.map(s => s.name === source.name ? newStats : s);
+            } else {
+              return [...prev, newStats];
+            }
+          });
+
+          return validItems;
+        } catch (error) {
+          console.error(`Failed to fetch from ${source.name}:`, error);
+          return [];
+        }
+      });
+
+      const allRssResults = await Promise.all(rssPromises);
+      const combinedNews = allRssResults.flat();
+
+      // Sort by priority and date
+      const sortedNews = combinedNews.sort((a, b) => {
+        const priorityOrder: { [key in 'high' | 'medium' | 'low']: number } = { high: 3, medium: 2, low: 1 };
+        const priorityDiff = (priorityOrder[b.priority] || 1) - (priorityOrder[a.priority] || 1);
+        if (priorityDiff !== 0) return priorityDiff;
+        
+        return new Date(b.pubDate).getTime() - new Date(a.pubDate).getTime();
+      });
+
+      setArticles(sortedNews.slice(0, 100));
+      setContentHashes(newContentHashes);
+      setNewArticleCount(totalNewArticles);
+      console.log(`✅ Loaded ${sortedNews.length} news items from ${RSS_SOURCES.length} sources`);
+      
+    } catch (error) {
+      console.error('❌ Enhanced news fetch failed:', error);
+      setError('Failed to load enhanced news sources');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Generate relevant tags based on content
   const generateTags = (title: string, description: string, category: string): string[] => {
     const text = `${title} ${description}`.toLowerCase();
     const tags: string[] = [category];
 
+    // Military/conflict keywords
     if (text.match(/attack|strike|military|war|conflict|battle|missile|drone|explosion/)) {
       tags.push('military-action');
     }
@@ -266,6 +373,22 @@ export function LiveNews() {
     return tags;
   };
 
+  // Format relative time
+  const formatRelativeTime = (dateString: string): string => {
+    const now = new Date();
+    const date = new Date(dateString);
+    const diffInMs = now.getTime() - date.getTime();
+    const diffInMinutes = Math.floor(diffInMs / (1000 * 60));
+    const diffInHours = Math.floor(diffInMinutes / 60);
+    const diffInDays = Math.floor(diffInHours / 24);
+
+    if (diffInMinutes < 1) return 'Just now';
+    if (diffInMinutes < 60) return `${diffInMinutes} minute${diffInMinutes === 1 ? '' : 's'} ago`;
+    if (diffInHours < 24) return `${diffInHours} hour${diffInHours === 1 ? '' : 's'} ago`;
+    if (diffInDays < 7) return `${diffInDays} day${diffInDays === 1 ? '' : 's'} ago`;
+    return date.toLocaleDateString();
+  };
+
   // Utility functions
   const calculateConfidence = (text: string, category: string): number => {
     const keywords = {
@@ -283,163 +406,37 @@ export function LiveNews() {
     return Math.min(matchCount / Math.max(categoryKeywords.length, 1), 1.0) * 100;
   };
 
-  // Enhanced fetch with deduplication and full content
-  const fetchEnhancedNews = async () => {
-    try {
-      setLoading(true);
-      setLastUpdate(new Date());
-      console.log('📡 Fetching enhanced news with deduplication...');
-
-      const newContentHashes = new Set(contentHashes);
-      let totalNewArticles = 0;
-      let totalDuplicates = 0;
-
-      // Use fallback sources for demonstration
-      const fallbackSources = [
-        { name: 'BBC World', url: 'https://feeds.bbci.co.uk/news/world/rss.xml', category: 'international' },
-        { name: 'Reuters World', url: 'https://www.reutersagency.com/feed/?best-topics=political-general&post_type=best', category: 'international' },
-        { name: 'AP News', url: 'https://rsshub.app/ap/topics/apf-intlnews', category: 'international' },
-      ];
-
-      const processedArticles: NewsItem[] = [];
-      const sourceStatistics: any[] = [];
-
-      for (const source of fallbackSources) {
-        try {
-          let response;
-          try {
-            response = await fetch(`${API_BASE_URL}/api/rss-proxy`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ url: source.url, source: source.name }),
-              mode: 'cors',
-            });
-          } catch {
-            response = await fetch(`https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(source.url)}`);
-          }
-
-          if (response.ok) {
-            const data = await response.json();
-            const items = data.items || data.feed?.items || [];
-            let sourceArticleCount = 0;
-            
-            items.slice(0, 5).forEach((item: any) => {
-              const contentHash = generateContentHash(item);
-              
-              if (newContentHashes.has(contentHash)) {
-                totalDuplicates++;
-                return;
-              }
-              newContentHashes.add(contentHash);
-              totalNewArticles++;
-              sourceArticleCount++;
-
-              const title = item.title || 'No title available';
-              const description = item.description || item.content || 'No description available';
-
-              const keywords = extractKeywords(title + ' ' + description);
-              const threatLevel = determineThreatLevel(title, description, keywords);
-              const confidence = calculateConfidence(title + ' ' + description, source.category);
-              const tags = generateTags(title, description, source.category);
-
-              processedArticles.push({
-                id: `${source.name}-${contentHash}`,
-                title,
-                description,
-                link: item.link || item.url || '#',
-                pubDate: item.pubDate || item.publishedAt || new Date().toISOString(),
-                insertedAt: new Date().toISOString(),
-                source: source.name,
-                category: source.category,
-                language: 'en',
-                priority: 'medium' as const,
-                confidence,
-                tags,
-                contentHash,
-                keywords,
-                threatLevel,
-                isNew: true,
-                wordCount: (title + ' ' + description).split(' ').length,
-                readingTime: Math.ceil((title + ' ' + description).split(' ').length / 200),
-              });
-            });
-
-            sourceStatistics.push({
-              name: source.name,
-              category: source.category,
-              articlesCount: sourceArticleCount,
-              lastUpdate: new Date().toISOString(),
-              status: 'active' as const
-            });
-          }
-        } catch (error) {
-          console.warn(`Failed to fetch from ${source.name}:`, error);
-          sourceStatistics.push({
-            name: source.name,
-            category: source.category,
-            articlesCount: 0,
-            lastUpdate: new Date().toISOString(),
-            status: 'error' as const
-          });
-        }
-      }
-
-      setSourceStats(sourceStatistics);
-      setDuplicatesRemoved(totalDuplicates);
-      setContentHashes(newContentHashes);
-
-      // Set articles or fallback data
-      if (processedArticles.length > 0) {
-        setArticles(processedArticles);
-        setError(null);
-      } else {
-        setError('Unable to fetch news from any source. Please check your connection.');
-        setArticles([
-          {
-            id: 'demo-1',
-            title: 'War Tracker - Live Intelligence Platform',
-            description: 'Real-time military intelligence and conflict monitoring system. Data will load when backend services are available.',
-            link: '#',
-            pubDate: new Date().toISOString(),
-            insertedAt: new Date().toISOString(),
-            source: 'System',
-            category: 'system',
-            language: 'en',
-            priority: 'high' as const,
-            confidence: 100,
-            tags: ['system', 'demo'],
-            keywords: ['war', 'tracker', 'intelligence'],
-            threatLevel: 'low' as const,
-            isNew: true,
-          }
-        ]);
-      }
-
-      console.log(`✅ Loaded ${processedArticles.length} news items`);
-      
-    } catch (error) {
-      console.error('❌ Enhanced news fetch failed:', error);
-      setError('Failed to load news sources. Please try again later.');
-    } finally {
-      setLoading(false);
+  const getCategoryIcon = (category: string) => {
+    switch (category?.toLowerCase()) {
+      case 'military': return <Shield className="w-4 h-4" />;
+      case 'civilian': return <AlertCircle className="w-4 h-4" />;
+      case 'diplomatic': return <Globe className="w-4 h-4" />;
+      case 'economic': return <BarChart3 className="w-4 h-4" />;
+      default: return <Activity className="w-4 h-4" />;
     }
   };
 
-  // useEffect to fetch news on component mount and setup auto-refresh
-  useEffect(() => {
-    fetchEnhancedNews();
-  }, []);
-
-  useEffect(() => {
-    if (autoRefresh) {
-      const interval = setInterval(() => {
-        fetchEnhancedNews();
-      }, refreshInterval);
-      return () => clearInterval(interval);
+  const getPriorityColor = (priority: string): string => {
+    switch (priority?.toLowerCase()) {
+      case 'critical': return 'bg-red-900/30 text-red-400 border-red-500/30';
+      case 'high': return 'bg-orange-900/30 text-orange-400 border-orange-500/30';
+      case 'medium': return 'bg-yellow-900/30 text-yellow-400 border-yellow-500/30';
+      case 'low': return 'bg-green-900/30 text-green-400 border-green-500/30';
+      default: return 'bg-tactical-dark/30 text-tactical-muted border-tactical-border';
     }
-  }, [autoRefresh, refreshInterval]);
+  };
 
-  // Filter handlers
+  const getThreatLevelStyling = (level: string): string => {
+    switch (level?.toLowerCase()) {
+      case 'critical': return 'bg-red-900/50 text-red-300 border-red-500';
+      case 'high': return 'bg-orange-900/50 text-orange-300 border-orange-500';
+      case 'medium': return 'bg-yellow-900/50 text-yellow-300 border-yellow-500';
+      case 'low': return 'bg-green-900/50 text-green-300 border-green-500';
+      default: return 'bg-tactical-dark/50 text-tactical-muted border-tactical-border';
+    }
+  };
+
+  // Filter handlers - FIXED: Use proper state setters
   const updateFilters = (newFilters: Partial<NewsFilters>) => {
     setFilters((prev: NewsFilters) => ({ ...prev, ...newFilters }));
     setCurrentPage(1);
@@ -454,20 +451,31 @@ export function LiveNews() {
       threatLevels: [],
       dateRange: { start: '', end: '' },
       sortBy: 'date',
-      sortOrder: 'desc'
+      sortOrder: 'desc',
+      category: '',
+      source: '',
+      severity: '',
+      location: '',
+      threatLevel: ''
     });
     setCurrentPage(1);
   };
 
-  const getThreatLevelStyling = (level: string): string => {
-    switch (level?.toLowerCase()) {
-      case 'critical': return 'bg-red-900/50 text-red-300 border-red-500';
-      case 'high': return 'bg-orange-900/50 text-orange-300 border-orange-500';
-      case 'medium': return 'bg-yellow-900/50 text-yellow-300 border-yellow-500';
-      case 'low': return 'bg-green-900/50 text-green-300 border-green-500';
-      default: return 'bg-tactical-dark/50 text-tactical-muted border-tactical-border';
+  // useEffect to fetch news on component mount and setup auto-refresh
+  useEffect(() => {
+    fetchEnhancedNews();
+  }, []);
+
+  // Auto-refresh effect
+  useEffect(() => {
+    if (autoRefresh) {
+      const interval = setInterval(() => {
+        fetchEnhancedNews();
+      }, refreshInterval);
+
+      return () => clearInterval(interval);
     }
-  };
+  }, [autoRefresh, refreshInterval]);
 
   // Loading state
   if (loading && articles.length === 0) {
@@ -497,16 +505,19 @@ export function LiveNews() {
   if (error) {
     return (
       <div className="min-h-screen bg-tactical-bg p-4 md:p-6">
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center py-20">
-            <AlertTriangle className="h-16 w-16 text-red-400 mx-auto mb-4" />
-            <h3 className="text-xl font-semibold text-tactical-text mb-2">Service Temporarily Unavailable</h3>
-            <p className="text-tactical-muted mb-6">{error}</p>
+        <div className="max-w-6xl mx-auto">
+          <div className="tactical-panel border-red-500 p-6">
+            <div className="flex items-center space-x-3 mb-4">
+              <Activity className="h-6 w-6 text-red-400" />
+              <h2 className="text-xl font-bold text-red-400">Connection Error</h2>
+            </div>
+            <p className="text-tactical-muted mb-4">{error}</p>
             <button
               onClick={fetchEnhancedNews}
-              className="px-6 py-3 bg-neon-600 hover:bg-neon-700 text-tactical-bg rounded-lg font-mono transition-colors"
+              className="px-4 py-2 bg-neon-600 hover:bg-neon-700 text-tactical-bg rounded font-mono flex items-center space-x-2 transition-colors"
             >
-              Retry Connection
+              <RefreshCw className="h-4 w-4" />
+              <span>Retry Connection</span>
             </button>
           </div>
         </div>
@@ -555,17 +566,18 @@ export function LiveNews() {
                 >
                   <RefreshCw className={`w-4 h-4 ${autoRefresh ? 'animate-spin' : ''}`} />
                 </button>
-                
-                <select
-                  value={refreshInterval}
-                  onChange={(e) => setRefreshInterval(Number(e.target.value))}
-                  className="bg-tactical-dark border border-tactical-border rounded px-2 py-1 text-tactical-text text-sm"
-                >
-                  <option value={15000}>15s</option>
-                  <option value={30000}>30s</option>
-                  <option value={60000}>1m</option>
-                  <option value={300000}>5m</option>
-                </select>
+                {autoRefresh && (
+                  <select
+                    value={refreshInterval}
+                    onChange={(e) => setRefreshInterval(Number(e.target.value))}
+                    className="bg-tactical-bg border border-tactical-border rounded px-2 py-1 text-tactical-text text-sm"
+                  >
+                    <option value={15000}>15s</option>
+                    <option value={30000}>30s</option>
+                    <option value={60000}>1m</option>
+                    <option value={300000}>5m</option>
+                  </select>
+                )}
               </div>
 
               {/* Translation Toggle */}
@@ -600,7 +612,7 @@ export function LiveNews() {
           <div className="tactical-panel p-4 mb-6">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center space-x-2">
-                <Filter className="w-4 h-4 text-neon-400" />
+                <Filter className="h-4 w-4 text-tactical-muted" />
                 <span className="text-sm font-mono text-tactical-text">ENHANCED FILTERS</span>
               </div>
               <button
@@ -642,7 +654,7 @@ export function LiveNews() {
                 <div className="flex items-center space-x-2">
                   <select
                     value={filters.sortBy}
-                    onChange={(e) => updateFilters({ sortBy: e.target.value as NewsFilters['sortBy'] })}
+                    onChange={(e) => updateFilters({ sortBy: e.target.value as any })}
                     className="flex-1 bg-tactical-bg border border-tactical-border rounded px-3 py-2 text-tactical-text text-sm"
                   >
                     <option value="date">Date</option>
@@ -697,7 +709,7 @@ export function LiveNews() {
                   className="w-full bg-tactical-bg border border-tactical-border rounded px-2 py-1 text-tactical-text text-xs max-h-20"
                   size={3}
                 >
-                  {uniqueSources.map((source: string) => (
+                  {Array.from(new Set(articles.map(item => item.source))).map(source => (
                     <option key={source} value={source} className="py-1">
                       {source}
                     </option>
@@ -723,7 +735,7 @@ export function LiveNews() {
                   </div>
                   <div className="flex justify-between">
                     <span className="text-tactical-muted">Sources Active:</span>
-                    <span className="text-green-400">{sourceStats.filter(s => s.status === 'active').length}</span>
+                    <span className="text-green-400">{sourceStats.filter((s: any) => s.status === 'active').length}</span>
                   </div>
                 </div>
               </div>
@@ -736,10 +748,10 @@ export function LiveNews() {
                   initial={{ opacity: 0, height: 0 }}
                   animate={{ opacity: 1, height: 'auto' }}
                   exit={{ opacity: 0, height: 0 }}
-                  className="tactical-panel border border-tactical-border rounded-lg p-4 mt-4"
+                  className="border-t border-tactical-border pt-4"
                 >
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    {/* Date Range Filter */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {/* Date Range */}
                     <div>
                       <label className="block text-xs text-tactical-muted mb-2">DATE RANGE</label>
                       <div className="space-y-2">
@@ -818,7 +830,9 @@ export function LiveNews() {
                   {/* Clear All Filters */}
                   <div className="flex justify-between items-center mt-4 pt-4 border-t border-tactical-border">
                     <div className="text-xs text-tactical-muted">
-                      {Object.values(filters).some(v => Array.isArray(v) ? v.length > 0 : v !== '' && v !== 'date' && v !== 'desc') && (
+                      {(filters.search || filters.sources.length > 0 || filters.categories.length > 0 || 
+                        filters.languages.length > 0 || filters.threatLevels.length > 0 ||
+                        filters.dateRange.start || filters.dateRange.end) && (
                         <span>Active filters: {
                           [
                             filters.search && 'Search',
@@ -855,7 +869,8 @@ export function LiveNews() {
                 : 'No articles available yet. Check back in a few minutes.'
               }
             </p>
-            {Object.values(filters).some(v => Array.isArray(v) ? v.length > 0 : v !== '' && v !== 'date' && v !== 'desc') && (
+            {(filters.search || filters.sources.length > 0 || filters.categories.length > 0 || 
+              filters.threatLevels.length > 0 || filters.dateRange.start || filters.dateRange.end) && (
               <button
                 onClick={resetFilters}
                 className="px-4 py-2 bg-neon-600 hover:bg-neon-700 text-tactical-bg rounded font-mono"
@@ -876,90 +891,114 @@ export function LiveNews() {
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -20 }}
                     transition={{ delay: index * 0.05 }}
-                    className="tactical-panel border border-tactical-border rounded-lg p-6 hover:border-neon-400/30 transition-all duration-200"
+                    className={`tactical-panel border-l-4 hover:bg-tactical-border/30 transition-colors ${
+                      item.threatLevel === 'critical' ? 'border-l-red-500' :
+                      item.threatLevel === 'high' ? 'border-l-orange-500' :
+                      item.threatLevel === 'medium' ? 'border-l-yellow-500' :
+                      'border-l-neon-400'
+                    }`}
                   >
-                    <div className="flex items-start justify-between mb-3">
-                      <div className="flex items-center space-x-2">
-                        <div className={`px-2 py-1 rounded text-xs border ${getThreatLevelStyling(item.threatLevel || 'low')}`}>
-                          {item.threatLevel?.toUpperCase() || 'LOW'}
-                        </div>
-                        <div className="px-2 py-1 bg-tactical-dark/50 text-tactical-muted rounded text-xs">
-                          {item.source}
-                        </div>
-                        <div className="px-2 py-1 bg-tactical-dark/50 text-tactical-muted rounded text-xs">
-                          {item.category}
-                        </div>
-                        {item.isNew && (
-                          <div className="px-2 py-1 bg-neon-500/20 text-neon-400 border border-neon-500/30 rounded text-xs animate-pulse">
-                            NEW
+                    <div className="p-4">
+                      {/* Enhanced Header */}
+                      <div className="flex justify-between items-start mb-3">
+                        <div className="flex items-center space-x-3">
+                          {getCategoryIcon(item.category)}
+                          <div className="flex items-center space-x-2">
+                            <span className={`px-2 py-1 rounded text-xs font-mono ${getPriorityColor(item.priority)}`}>
+                              {item.priority.toUpperCase()}
+                            </span>
+                            {item.threatLevel && (
+                              <span className={`px-2 py-1 rounded text-xs font-mono border ${getThreatLevelStyling(item.threatLevel)}`}>
+                                {item.threatLevel.toUpperCase()}
+                              </span>
+                            )}
+                            <span className="text-xs text-tactical-muted font-mono">
+                              {item.language.toUpperCase()}
+                            </span>
+                            {item.translated && (
+                              <span className="text-xs bg-blue-600/20 text-blue-400 px-2 py-1 rounded">
+                                TRANSLATED
+                              </span>
+                            )}
+                            {item.isNew && (
+                              <span className="text-xs bg-green-600/20 text-green-400 px-2 py-1 rounded animate-pulse">
+                                NEW
+                              </span>
+                            )}
                           </div>
-                        )}
+                        </div>
+                        
+                        <div className="flex items-center space-x-3 text-xs text-tactical-muted">
+                          {item.readingTime && (
+                            <span className="flex items-center space-x-1">
+                              <Clock className="h-3 w-3" />
+                              <span>{item.readingTime}m read</span>
+                            </span>
+                          )}
+                          <span>{formatRelativeTime(item.pubDate)}</span>
+                        </div>
                       </div>
-                      <div className="flex items-center space-x-2 text-xs text-tactical-muted">
-                        <Clock className="w-3 h-3" />
-                        {item.readingTime && (
-                          <span className="mr-2">
-                            <span>{item.readingTime}m read</span>
-                          </span>
-                        )}
-                        <span>{formatRelativeTime(item.pubDate)}</span>
-                      </div>
-                    </div>
 
-                    {/* Enhanced Content */}
-                    <h3 className="text-lg font-semibold text-tactical-text mb-2 hover:text-neon-400 transition-colors">
-                      <a
-                        href={item.link}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-start space-x-2"
-                      >
-                        <span className="flex-1">{item.title}</span>
-                        <ExternalLink className="h-4 w-4 text-tactical-muted flex-shrink-0 mt-0.5" />
-                      </a>
-                    </h3>
+                      {/* Enhanced Content */}
+                      <h3 className="text-lg font-semibold text-tactical-text mb-2 hover:text-neon-400 transition-colors">
+                        <a
+                          href={item.link}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-start space-x-2"
+                        >
+                          <span className="flex-1">{item.title}</span>
+                          <ExternalLink className="h-4 w-4 text-tactical-muted flex-shrink-0 mt-0.5" />
+                        </a>
+                      </h3>
 
-                    {item.originalTitle && (
-                      <details className="mb-2">
-                        <summary className="text-sm text-tactical-muted cursor-pointer hover:text-tactical-text">
-                          View Original Text
-                        </summary>
-                        <p className="text-sm text-tactical-muted mt-1 pl-4 border-l-2 border-tactical-border">
-                          {item.originalTitle}
-                        </p>
-                      </details>
-                    )}
+                      <p className="text-tactical-muted mb-3 line-clamp-3">
+                        {item.description}
+                      </p>
 
-                    <p className="text-tactical-muted text-sm mb-4 line-clamp-3">
-                      {item.description}
-                    </p>
-
-                    {/* Enhanced Metadata */}
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-4">
-                        {/* Tags */}
-                        {item.tags && item.tags.length > 0 && (
-                          <div className="flex items-center space-x-1">
-                            <Hash className="w-3 h-3 text-tactical-muted" />
-                            <div className="flex space-x-1">
-                              {item.tags.slice(0, 3).map(tag => (
-                                <span
-                                  key={tag}
-                                  className="px-1 py-0.5 bg-tactical-dark/30 text-tactical-muted rounded text-xs"
-                                >
-                                  {tag}
-                                </span>
-                              ))}
-                            </div>
+                      {/* Keywords */}
+                      {item.keywords && item.keywords.length > 0 && (
+                        <div className="mb-3">
+                          <div className="flex flex-wrap gap-1">
+                            {item.keywords.slice(0, 5).map((keyword: string) => (
+                              <span
+                                key={keyword}
+                                className="px-2 py-1 bg-neon-600/20 text-neon-400 text-xs rounded font-mono"
+                              >
+                                #{keyword}
+                              </span>
+                            ))}
                           </div>
-                        )}
+                        </div>
+                      )}
 
-                        {/* Confidence Score */}
-                        {item.confidence && (
+                      {/* Enhanced Footer */}
+                      <div className="flex justify-between items-center pt-3 border-t border-tactical-border">
+                        <div className="flex items-center space-x-4">
+                          <div className="flex flex-wrap gap-1">
+                            {item.tags?.slice(0, 3).map((tag: string) => (
+                              <span
+                                key={tag}
+                                className="px-2 py-1 bg-tactical-border/50 text-tactical-muted text-xs rounded"
+                              >
+                                {tag}
+                              </span>
+                            ))}
+                          </div>
+                          
+                          <div className="text-xs text-tactical-muted flex items-center space-x-2">
+                            <Hash className="h-3 w-3" />
+                            <span>{item.contentHash?.substring(0, 8)}</span>
+                          </div>
+                        </div>
+                        
+                        <div className="flex items-center space-x-4 text-xs text-tactical-muted">
                           <div className="flex items-center space-x-1">
-                            <span className="text-xs text-tactical-muted">Confidence:</span>
+                            <span className="font-mono">{item.source}</span>
+                          </div>
+                          {item.confidence && (
                             <div className="flex items-center space-x-1">
-                              <span className="text-xs text-tactical-text">{item.confidence}%</span>
+                              <span>{Math.round(item.confidence)}%</span>
                               {item.confidence >= 80 ? (
                                 <CheckCircle className="h-3 w-3 text-green-400" />
                               ) : item.confidence >= 60 ? (
@@ -968,11 +1007,11 @@ export function LiveNews() {
                                 <AlertTriangle className="h-3 w-3 text-red-400" />
                               )}
                             </div>
-                          </div>
-                        )}
-                        {item.wordCount && (
-                          <span className="text-xs text-tactical-muted">{item.wordCount} words</span>
-                        )}
+                          )}
+                          {item.wordCount && (
+                            <span>{item.wordCount} words</span>
+                          )}
+                        </div>
                       </div>
                     </div>
                   </motion.div>
@@ -999,7 +1038,7 @@ export function LiveNews() {
 
                   <div className="flex items-center space-x-4">
                     <div className="text-sm font-mono text-tactical-muted">
-                      Showing {((currentPage - 1) * itemsPerPage) + 1}-{Math.min(currentPage * itemsPerPage, filteredAndSortedNews.length)} of {filteredAndSortedNews.length}
+                      Showing {((currentPage - 1) * 20) + 1}-{Math.min(currentPage * 20, filteredAndSortedNews.length)} of {filteredAndSortedNews.length}
                     </div>
                     
                     {/* Page Numbers */}
@@ -1034,8 +1073,8 @@ export function LiveNews() {
                         : 'bg-neon-600 hover:bg-neon-700 text-tactical-bg'
                     }`}
                   >
-                    <span>Next</span>
                     <ChevronUp className="h-4 w-4" />
+                    <span>Next</span>
                   </button>
                 </div>
               </div>
@@ -1046,3 +1085,49 @@ export function LiveNews() {
     </div>
   );
 }
+
+// Extract keywords from content
+const extractKeywords = (text: string): string[] => {
+  const keywords: string[] = [];
+  const content = text.toLowerCase();
+  
+  // Military/conflict keywords
+  const militaryTerms = ['attack', 'strike', 'military', 'war', 'conflict', 'battle', 'missile', 'drone', 'explosion', 'combat'];
+  const diplomaticTerms = ['negotiation', 'peace', 'treaty', 'agreement', 'diplomacy', 'sanctions'];
+  const humanitarianTerms = ['refugee', 'civilian', 'aid', 'humanitarian', 'evacuation', 'casualties'];
+  
+  [militaryTerms, diplomaticTerms, humanitarianTerms].forEach(terms => {
+    terms.forEach(term => {
+      if (content.includes(term)) keywords.push(term);
+    });
+  });
+
+  return [...new Set(keywords)];
+};
+
+// Determine threat level based on content analysis - FIXED: Use keywords parameter
+const determineThreatLevel = (title: string, description: string, keywords: string[]): 'critical' | 'high' | 'medium' | 'low' => {
+  const content = (title + ' ' + description).toLowerCase();
+  
+  // Use the keywords parameter for enhanced classification
+  const hasKeywords = (terms: string[]) => 
+    keywords.some(keyword => terms.includes(keyword)) || 
+    terms.some(term => content.includes(term));
+  
+  // Critical indicators
+  if (hasKeywords(['nuclear', 'wmd', 'mass destruction', 'terrorist attack', 'invasion', 'declaration of war'])) {
+    return 'critical';
+  }
+  
+  // High threat indicators
+  if (hasKeywords(['missile strike', 'bombing', 'casualties', 'military offensive', 'escalation'])) {
+    return 'high';
+  }
+  
+  // Medium threat indicators
+  if (hasKeywords(['military', 'conflict', 'tension', 'sanctions', 'weapons'])) {
+    return 'medium';
+  }
+  
+  return 'low';
+};

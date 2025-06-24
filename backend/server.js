@@ -19,7 +19,15 @@ if (!supabaseUrl || !supabaseKey) {
 console.log('✅ Supabase configured:', supabaseUrl);
 console.log('🔑 Service key length:', supabaseKey?.length);
 console.log('🔑 Service key starts with:', supabaseKey?.substring(0, 20) + '...');
-const supabase = createClient(supabaseUrl, supabaseKey);
+const supabase = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY,
+  {
+    db: {
+      schema: 'public' // Explicit default schema
+    }
+  }
+);
 
 app.use(cors({
   origin: process.env.NODE_ENV === 'production' 
@@ -58,7 +66,7 @@ const processAndInsertArticle = async (article) => {
   
   try {
     const { data, error } = await supabase
-      .from('rss_articles')
+      .from('rss_articles')  // Remove schema prefix
       .upsert({
         title: article.title,
         content: article.description || article.contentSnippet || '',

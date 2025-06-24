@@ -12,7 +12,11 @@
     "setup": "./scripts/setup.sh",
     "deploy:functions": "./scripts/deploy-functions.sh",
     "test:api": "./scripts/test-api.sh",
-    "logs": "npx supabase functions logs --tail"
+    "logs": "npx supabase functions logs --tail",
+    "fetch-rss": "node scripts/rss-fetcher.js",
+    "fetch-rss:dry": "node scripts/rss-fetcher.js --dry-run",
+    "fix-schemas": "node scripts/fix-supabase-schemas.js",
+    "check-schemas": "node scripts/check-schemas.js"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.39.3",

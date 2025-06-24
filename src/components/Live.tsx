@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 
 interface RSSArticle {
@@ -28,6 +28,8 @@ export default function Live() {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
   const [isAutoRefresh, setIsAutoRefresh] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     fetchSources();
@@ -60,7 +62,7 @@ export default function Live() {
 
   const fetchSources = async () => {
     const { data, error } = await supabase
-      .from('rss_sources')
+      .from('rss_sources')  // Remove schema prefix
       .select('*')
       .eq('is_active', true)
       .order('name');
@@ -70,34 +72,37 @@ export default function Live() {
     }
   };
 
-  const fetchArticles = async () => {
-    setLoading(true);
+  const fetchArticles = useCallback(async () => {
+    if (isRefreshing) return;
     
-    let query = supabase
-      .from('rss_articles')
-      .select(`
-        *,
-        rss_sources(name, category)
-      `)
-      .order('published_date', { ascending: false })
-      .limit(50);
-
-    if (filter !== 'all') {
-      query = query.eq('is_processed', filter === 'processed');
+    setIsRefreshing(true);
+    setError(null);
+    
+    try {
+      console.log('🔄 Live: Fetching articles from server...');
+      
+      const response = await fetch(`${import.meta.env?.VITE_API_URL || 'http://localhost:3001'}/api/live`);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      
+      const contentType = response.headers.get('content-type');
+      if (!contentType?.includes('application/json')) {
+        throw new Error('Server returned HTML instead of JSON. Make sure the server is running on port 3001.');
+      }
+      
+      const data = await response.json();
+      setArticles(data.articles);
+      setSources(data.sources);
+    } catch (err) {
+      setError(err.message);
+      console.error('Error fetching articles:', err);
+    } finally {
+      setIsRefreshing(false);
+      setLoading(false);
     }
-
-    const { data, error } = await query;
-    
-    if (data && !error) {
-      setArticles(data.map(article => ({
-        ...article,
-        source_name: article.rss_sources?.name || 'Unknown',
-        category: article.rss_sources?.category || 'general'
-      })));
-    }
-    
-    setLoading(false);
-  };
+  }, [isRefreshing]);
 
   const triggerFetchRSS = async () => {
     setLoading(true);
