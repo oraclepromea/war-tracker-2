@@ -1,0 +1,6 @@
+version: 1
+functions:
+  rssFetcher:
+    schedule: "*/15 * * * *"
+    timeout: 300
+    memory: 256
