@@ -5,8 +5,9 @@
   "main": "dist/index.js",
   "scripts": {
     "dev": "ts-node --transpile-only src/index.ts",
-    "build": "tsc --noEmit && tsc --outDir dist",
-    "build:strict": "tsc",
+    "build": "tsc --outDir dist",
+    "build:check": "tsc --noEmit",
+    "build:verbose": "tsc --outDir dist --listFiles",
     "start": "node dist/index.js",
     "test": "jest",
     "fetch-rss": "node ../scripts/rss-fetcher.js",
