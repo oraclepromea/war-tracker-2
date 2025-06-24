@@ -154,3 +154,4 @@ Thumbs.db
 
 # Turbo
 .turbo
+node_modules/
