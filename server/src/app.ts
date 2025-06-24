@@ -23,10 +23,7 @@ app.use(cors({
 
 app.use(express.json());
 
-// Use routes
-app.use('/', routes);
-
-// Health check endpoint
+// Health check endpoint - add before routes
 app.get('/api/health', (req, res) => {
   res.json({ 
     success: true, 
@@ -36,6 +33,9 @@ app.get('/api/health', (req, res) => {
     uptime: process.uptime()
   });
 });
+
+// Use routes
+app.use('/', routes);
 
 // RSS Feed testing endpoint
 app.get('/api/feeds/test', async (req, res) => {
