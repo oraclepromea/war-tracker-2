@@ -1,16 +1,25 @@
 import express from 'express';
 import cors from 'cors';
-import { EnhancedDataSourceManager } from './services/enhancedDataSources';
-import { RSSService } from './services/rssService';
+import routes from './routes';
 
 const app = express();
 
-// Initialize services
-const dataSourceManager = EnhancedDataSourceManager.getInstance();
+// CORS configuration
+app.use(cors({
+  origin: [
+    'http://localhost:3000',
+    'http://localhost:5173',
+    'https://war-tracker-20-production.up.railway.app',
+    'https://your-frontend-domain.vercel.app'
+  ],
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
 
-// Middleware
-app.use(cors());
 app.use(express.json());
+
+// Use routes
+app.use('/', routes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
