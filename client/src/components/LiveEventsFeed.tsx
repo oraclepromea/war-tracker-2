@@ -13,12 +13,11 @@ import {
 import { useRealTimeData } from '@/hooks/useRealTimeData';
 
 export function LiveEventsFeed() {
-  const { backendData, backendStatus } = useRealTimeData();
+  const { events, isConnected, connectionStatus } = useRealTimeData();
   
   // Extract events data from backendData
-  const events = backendData?.events || [];
-  const loading = backendStatus === 'checking';
-  const error = backendStatus === 'offline' ? 'Backend offline' : null;
+  const loading = connectionStatus === 'checking';
+  const error = connectionStatus === 'offline' ? 'Backend offline' : null;
 
   // Get the latest 10 events
   const recentEvents = events.slice(0, 10);

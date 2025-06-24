@@ -1,11 +1,7 @@
 {
   "compilerOptions": {
     "target": "ES2020",
-    "lib": [
-      "ES2020",
-      "DOM",
-      "DOM.Iterable"
-    ],
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
     "module": "ESNext",
     "skipLibCheck": true,
     "esModuleInterop": true,
@@ -21,24 +17,12 @@
     "downlevelIteration": true,
     "baseUrl": ".",
     "paths": {
-      "@/*": [
-        "./client/src/*",
-        "./frontend/src/*"
-      ]
+      "@/*": ["./src/*"]
     }
   },
   "include": [
-    "client/src",
-    "frontend/src",
     "src",
-    "scripts"
+    "vite-env.d.ts"
   ],
-  "exclude": [
-    "src/server",
-    "supabase/functions",
-    "node_modules",
-    "**/*.js",
-    "dist",
-    "build"
-  ]
+  "references": [{ "path": "./tsconfig.node.json" }]
 }

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
-import { apiRequest, API_ENDPOINTS } from '../../client/src/config/api';
-import { ArticlesService } from '../../client/src/services/articles';
+import { apiRequest, API_ENDPOINTS } from '../lib/api';
+import { ArticlesService } from '../services/articles';
 
 interface RSSArticle {
   id: string;
@@ -24,7 +24,7 @@ interface RSSSource {
   last_fetched: string;
 }
 
-const Live = () => {
+export function Live() {
   const [articles, setArticles] = useState<RSSArticle[]>([]);
   const [sources, setSources] = useState<RSSSource[]>([]);
   const [loading, setLoading] = useState(true);
@@ -303,5 +303,3 @@ const Live = () => {
     </div>
   );
 };
-
-export default Live;

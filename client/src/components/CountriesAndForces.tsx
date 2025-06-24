@@ -1,8 +1,7 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
-import { motion, AnimatePresence } from 'framer-motion';
 import { WikipediaImageService } from '@/services/wikipediaImageService';
-import { fetchWeaponImage } from '../services/wikipediaImageService';
 
 // Define weapon interface
 interface Weapon {
@@ -15,6 +14,10 @@ interface Weapon {
   imageUrl: string;
 }
 
+interface WikipediaImage {
+  title: string;
+  url: string;
+}
 
 const countries = [
   {
@@ -1153,6 +1156,7 @@ const countries = [
 ];
 
 export function CountriesAndForces() {
+  const [selectedCountry, setSelectedCountry] = useState<string | null>(null);
   const [expandedCountry, setExpandedCountry] = useState<string | null>(null);
   const [selectedWeaponType, setSelectedWeaponType] = useState<string>('all');
   const [weaponImages, setWeaponImages] = useState<Map<string, string>>(new Map());
@@ -1181,11 +1185,11 @@ export function CountriesAndForces() {
     setLoadingImages(new Set(allWeapons.map(w => w.name)));
 
     try {
-      const imageResults = await WikipediaImageService.getMultipleWeaponImages(allWeapons);
+      const imageResults = await WikipediaImageService.getMultipleWeaponImagesFromObjects(allWeapons);
       
       const newImageMap = new Map(weaponImages);
-      imageResults.forEach(result => {
-        newImageMap.set(result.name, result.imageUrl);
+      imageResults.forEach((result: any) => {
+        newImageMap.set(result.title, result.url);
       });
       
       setWeaponImages(newImageMap);
@@ -1252,235 +1256,245 @@ export function CountriesAndForces() {
   };
 
   return (
-    <div className="space-y-6 p-6 max-w-full mx-auto">
-      <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-tactical font-bold text-neon-400">
-          Countries & Forces
-        </h2>
-        
-        {/* Expand/Collapse All Controls */}
-        <div className="flex space-x-2">
-          <button
-            onClick={expandAllCountries}
-            className="px-4 py-2 bg-neon-400/20 text-neon-400 border border-neon-400/50 rounded font-mono text-sm hover:bg-neon-400/30 transition-all"
-          >
-            EXPAND ALL
-          </button>
-          <button
-            onClick={collapseAllCountries}
-            className="px-4 py-2 bg-tactical-panel text-tactical-muted border border-tactical-border rounded font-mono text-sm hover:text-neon-400 hover:border-neon-400/50 transition-all"
-          >
-            COLLAPSE ALL
-          </button>
+    <div className="min-h-screen bg-tactical-bg p-4 md:p-6">
+      <div className="space-y-6 p-6 max-w-full mx-auto">
+        <div className="flex items-center justify-between">
+          <h2 className="text-2xl font-tactical font-bold text-neon-400">
+            Countries & Forces
+          </h2>
+          
+          {/* Expand/Collapse All Controls */}
+          <div className="flex space-x-2">
+            <button
+              onClick={expandAllCountries}
+              className="px-4 py-2 bg-neon-400/20 text-neon-400 border border-neon-400/50 rounded font-mono text-sm hover:bg-neon-400/30 transition-all"
+            >
+              EXPAND ALL
+            </button>
+            <button
+              onClick={collapseAllCountries}
+              className="px-4 py-2 bg-tactical-panel text-tactical-muted border border-tactical-border rounded font-mono text-sm hover:text-neon-400 hover:border-neon-400/50 transition-all"
+            >
+              COLLAPSE ALL
+            </button>
+          </div>
         </div>
-      </div>
-      
-      <div className="space-y-4">
-        {countries.map((country, index) => (
-          <motion.div
-            key={country.id}
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: index * 0.1 }}
-            className="w-full"
-          >
-            <Card className="neon-border">
-              <CardHeader 
-                className="cursor-pointer"
-                onClick={() => toggleCountryExpansion(country.id)}
+        
+        <div className="space-y-4">
+          {countries.map((country, index) => (
+            <motion.div
+              key={country.id}
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: index * 0.1 }}
+              className="w-full"
+            >
+              <Card 
+                className={`tactical-panel p-6 rounded neon-border cursor-pointer transition-all ${
+                  selectedCountry === country.id 
+                    ? 'bg-neon-950/30 border-neon-400' 
+                    : 'hover:bg-tactical-bg'
+                }`}
               >
-                <CardTitle className="flex items-center justify-between">
-                  <div className="flex items-center space-x-3">
-                    <span className="text-3xl">{country.flag}</span>
-                    <div>
-                      <div className="text-neon-400">{country.name}</div>
-                      <div className="text-sm text-tactical-muted font-mono">
-                        COMBAT STATUS: ACTIVE
+                <div onClick={() => setSelectedCountry(country.id)}>
+                  <CardHeader 
+                    className="cursor-pointer"
+                    onClick={() => toggleCountryExpansion(country.id)}
+                  >
+                    <CardTitle className="flex items-center justify-between">
+                      <div className="flex items-center space-x-3">
+                        <span className="text-3xl">{country.flag}</span>
+                        <div>
+                          <div className="text-neon-400">{country.name}</div>
+                          <div className="text-sm text-tactical-muted font-mono">
+                            COMBAT STATUS: ACTIVE
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                  </div>
-                  
-                  {/* Quick Stats */}
-                  <div className="flex items-center space-x-6">
-                    <div className="text-center">
-                      <div className="text-tactical-muted text-xs font-mono">CASUALTIES</div>
-                      <div className="text-red-400 font-tactical">
-                        {country.casualties.toLocaleString()}
-                      </div>
-                    </div>
-                    <div className="text-center">
-                      <div className="text-tactical-muted text-xs font-mono">ECONOMIC HIT</div>
-                      <div className="text-orange-400 font-tactical">
-                        ${country.economicImpact}B
-                      </div>
-                    </div>
-                    <div className="text-center">
-                      <div className="text-tactical-muted text-xs font-mono">GROUND FORCES</div>
-                      <div className="text-neon-400 font-tactical">
-                        {country.forces.ground.toLocaleString()}
-                      </div>
-                    </div>
-                    <motion.div
-                      animate={{ rotate: expandedCountry === country.id ? 180 : 0 }}
-                      className="text-neon-400"
-                    >
-                      ▼
-                    </motion.div>
-                  </div>
-                </CardTitle>
-              </CardHeader>
-              
-              {(expandedCountry === country.id || allExpanded) && (
-                <motion.div
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: 'auto' }}
-                  exit={{ opacity: 0, height: 0 }}
-                  transition={{ duration: 0.3 }}
-                >
-                  <CardContent className="space-y-6">
-                    {/* Weapon Type Selector */}
-                    <div className="flex space-x-2 border-b border-tactical-border pb-4">
-                      {getAllWeaponTypes(country).map((weaponType) => (
-                        <button
-                          key={weaponType}
-                          onClick={() => setSelectedWeaponType(weaponType)}
-                          className={`px-4 py-2 rounded font-mono text-sm transition-all ${
-                            selectedWeaponType === weaponType
-                              ? 'bg-neon-400/20 text-neon-400 border border-neon-400/50'
-                              : 'bg-tactical-panel text-tactical-muted hover:text-neon-400'
-                          }`}
-                        >
-                          {weaponType === 'all' ? 'ALL WEAPONS' : weaponType.toUpperCase()}
-                        </button>
-                      ))}
-                    </div>
-
-                    {/* Weapon Cards Grid */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                      {getWeaponsByType(country, selectedWeaponType).map((weapon, idx) => (
+                      
+                      {/* Quick Stats */}
+                      <div className="flex items-center space-x-6">
+                        <div className="text-center">
+                          <div className="text-tactical-muted text-xs font-mono">CASUALTIES</div>
+                          <div className="text-red-400 font-tactical">
+                            {country.casualties.toLocaleString()}
+                          </div>
+                        </div>
+                        <div className="text-center">
+                          <div className="text-tactical-muted text-xs font-mono">ECONOMIC HIT</div>
+                          <div className="text-orange-400 font-tactical">
+                            ${country.economicImpact}B
+                          </div>
+                        </div>
+                        <div className="text-center">
+                          <div className="text-tactical-muted text-xs font-mono">GROUND FORCES</div>
+                          <div className="text-neon-400 font-tactical">
+                            {country.forces.ground.toLocaleString()}
+                          </div>
+                        </div>
                         <motion.div
-                          key={`${weapon.category}-${idx}`}
-                          initial={{ opacity: 0, y: 20 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ delay: idx * 0.05 }}
-                          className="tactical-panel p-4 rounded neon-border"
+                          animate={{ rotate: expandedCountry === country.id ? 180 : 0 }}
+                          className="text-neon-400"
                         >
-                          <div className="space-y-3">
-                            {/* Weapon Image */}
-                            <div className="w-full h-64 rounded overflow-hidden bg-tactical-bg/50 flex items-center justify-center border border-tactical-border/30">
-                              {loadingImages.has(weapon.name) ? (
-                                <div className="w-full h-full flex flex-col items-center justify-center text-tactical-muted bg-tactical-panel/80 rounded">
-                                  <div className="animate-spin text-2xl mb-2">⚙️</div>
-                                  <div className="text-xs text-center font-mono px-2 text-neon-400">LOADING IMAGE...</div>
+                          ▼
+                        </motion.div>
+                      </div>
+                    </CardTitle>
+                  </CardHeader>
+                  
+                  {(expandedCountry === country.id || allExpanded) && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: 'auto' }}
+                      exit={{ opacity: 0, height: 0 }}
+                      transition={{ duration: 0.3 }}
+                    >
+                      <CardContent className="space-y-6">
+                        {/* Weapon Type Selector */}
+                        <div className="flex space-x-2 border-b border-tactical-border pb-4">
+                          {getAllWeaponTypes(country).map((weaponType) => (
+                            <button
+                              key={weaponType}
+                              onClick={() => setSelectedWeaponType(weaponType)}
+                              className={`px-4 py-2 rounded font-mono text-sm transition-all ${
+                                selectedWeaponType === weaponType
+                                  ? 'bg-neon-400/20 text-neon-400 border border-neon-400/50'
+                                  : 'bg-tactical-panel text-tactical-muted hover:text-neon-400'
+                              }`}
+                            >
+                              {weaponType === 'all' ? 'ALL WEAPONS' : weaponType.toUpperCase()}
+                            </button>
+                          ))}
+                        </div>
+
+                        {/* Weapon Cards Grid */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                          {getWeaponsByType(country, selectedWeaponType).map((weapon, idx) => (
+                            <motion.div
+                              key={`${weapon.category}-${idx}`}
+                              initial={{ opacity: 0, y: 20 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              transition={{ delay: idx * 0.05 }}
+                              className="tactical-panel p-4 rounded neon-border"
+                            >
+                              <div className="space-y-3">
+                                {/* Weapon Image */}
+                                <div className="w-full h-64 rounded overflow-hidden bg-tactical-bg/50 flex items-center justify-center border border-tactical-border/30">
+                                  {loadingImages.has(weapon.name) ? (
+                                    <div className="w-full h-full flex flex-col items-center justify-center text-tactical-muted bg-tactical-panel/80 rounded">
+                                      <div className="animate-spin text-2xl mb-2">⚙️</div>
+                                      <div className="text-xs text-center font-mono px-2 text-neon-400">LOADING IMAGE...</div>
+                                    </div>
+                                  ) : (
+                                    <img 
+                                      src={weaponImages.get(weapon.name) || `https://via.placeholder.com/800x600/1a1a1a/00ff88?text=${encodeURIComponent(weapon.name)}`}
+                                      alt={weapon.name}
+                                      className="w-full h-full object-contain hover:scale-105 transition-transform duration-300"
+                                      loading="lazy"
+                                      onError={(e) => {
+                                        const target = e.target as HTMLImageElement;
+                                        const container = target.parentElement;
+                                        if (container) {
+                                          const emoji = weapon.category === 'aircraft' ? '✈️' : 
+                                                       weapon.category === 'missiles' ? '🚀' : 
+                                                       weapon.category === 'tanks' ? '🚗' : 
+                                                       weapon.category === 'ships' ? '🚢' : '⚔️';
+                                          container.innerHTML = `
+                                            <div class="w-full h-full flex flex-col items-center justify-center text-tactical-muted bg-tactical-panel/80 rounded">
+                                              <div class="text-4xl mb-2">${emoji}</div>
+                                              <div class="text-xs text-center font-mono px-2 text-neon-400">${weapon.name}</div>
+                                            </div>
+                                          `;
+                                        }
+                                      }}
+                                    />
+                                  )}
                                 </div>
-                              ) : (
-                                <img 
-                                  src={weaponImages.get(weapon.name) || `https://via.placeholder.com/800x600/1a1a1a/00ff88?text=${encodeURIComponent(weapon.name)}`}
-                                  alt={weapon.name}
-                                  className="w-full h-full object-contain hover:scale-105 transition-transform duration-300"
-                                  loading="lazy"
-                                  onError={(e) => {
-                                    const target = e.target as HTMLImageElement;
-                                    const container = target.parentElement;
-                                    if (container) {
-                                      const emoji = weapon.category === 'aircraft' ? '✈️' : 
-                                                   weapon.category === 'missiles' ? '🚀' : 
-                                                   weapon.category === 'tanks' ? '🚗' : 
-                                                   weapon.category === 'ships' ? '🚢' : '⚔️';
-                                      container.innerHTML = `
-                                        <div class="w-full h-full flex flex-col items-center justify-center text-tactical-muted bg-tactical-panel/80 rounded">
-                                          <div class="text-4xl mb-2">${emoji}</div>
-                                          <div class="text-xs text-center font-mono px-2 text-neon-400">${weapon.name}</div>
-                                        </div>
-                                      `;
-                                    }
-                                  }}
-                                />
-                              )}
-                            </div>
 
-                            <div className="text-center">
-                              <div className="text-neon-400 font-tactical text-lg mb-1">
-                                {weapon.name}
-                              </div>
-                              <div className="text-xs text-tactical-muted mb-1">
-                                {weapon.description}
-                              </div>
-                              {selectedWeaponType === 'all' && (
-                                <div className="inline-block px-2 py-1 bg-neon-400/20 text-neon-400 text-xs rounded font-mono">
-                                  {weapon.category.toUpperCase()}
+                                <div className="text-center">
+                                  <div className="text-neon-400 font-tactical text-lg mb-1">
+                                    {weapon.name}
+                                  </div>
+                                  <div className="text-xs text-tactical-muted mb-1">
+                                    {weapon.description}
+                                  </div>
+                                  {selectedWeaponType === 'all' && (
+                                    <div className="inline-block px-2 py-1 bg-neon-400/20 text-neon-400 text-xs rounded font-mono">
+                                      {weapon.category.toUpperCase()}
+                                    </div>
+                                  )}
                                 </div>
-                              )}
+
+                                <div className="space-y-2">
+                                  <div className="flex justify-between">
+                                    <span className="text-tactical-muted text-xs">COST:</span>
+                                    <span className="text-orange-400 font-mono text-xs">
+                                      {formatCost(weapon.cost)}
+                                    </span>
+                                  </div>
+                                  
+                                  <div className="flex justify-between">
+                                    <span className="text-tactical-muted text-xs">QUANTITY:</span>
+                                    <span className="text-neon-400 font-mono text-xs">
+                                      {weapon.quantity.toLocaleString()}
+                                    </span>
+                                  </div>
+
+                                  <div className="flex justify-between">
+                                    <span className="text-tactical-muted text-xs">
+                                      {selectedWeaponType === 'ships' ? 'SPEED (knots):' : 'SPEED (km/h):'}
+                                    </span>
+                                    <span className="text-blue-400 font-mono text-xs">
+                                      {weapon.speed.toLocaleString()}
+                                    </span>
+                                  </div>
+
+                                  <div className="flex justify-between">
+                                    <span className="text-tactical-muted text-xs">RANGE (km):</span>
+                                    <span className="text-green-400 font-mono text-xs">
+                                      {weapon.range.toLocaleString()}
+                                    </span>
+                                  </div>
+
+                                  <div className="flex justify-between">
+                                    <span className="text-tactical-muted text-xs">TOTAL VALUE:</span>
+                                    <span className="text-yellow-400 font-mono text-xs">
+                                      {formatCost(weapon.cost * weapon.quantity)}
+                                    </span>
+                                  </div>
+                                </div>
+
+                                {/* Status Indicator */}
+                                <div className="pt-2 border-t border-tactical-border/50">
+                                  <div className="flex items-center justify-center space-x-2">
+                                    <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                                    <span className="text-green-400 text-xs font-mono">OPERATIONAL</span>
+                                  </div>
+                                </div>
+                              </div>
+                            </motion.div>
+                          ))}
+                        </div>
+
+                        {/* Total Arsenal Value */}
+                        <div className="tactical-panel p-4 rounded bg-tactical-bg/50">
+                          <div className="text-center">
+                            <div className="text-tactical-muted text-xs font-mono mb-2">
+                              TOTAL {selectedWeaponType === 'all' ? 'ARSENAL' : selectedWeaponType.toUpperCase()} VALUE
                             </div>
-
-                            <div className="space-y-2">
-                              <div className="flex justify-between">
-                                <span className="text-tactical-muted text-xs">COST:</span>
-                                <span className="text-orange-400 font-mono text-xs">
-                                  {formatCost(weapon.cost)}
-                                </span>
-                              </div>
-                              
-                              <div className="flex justify-between">
-                                <span className="text-tactical-muted text-xs">QUANTITY:</span>
-                                <span className="text-neon-400 font-mono text-xs">
-                                  {weapon.quantity.toLocaleString()}
-                                </span>
-                              </div>
-
-                              <div className="flex justify-between">
-                                <span className="text-tactical-muted text-xs">
-                                  {selectedWeaponType === 'ships' ? 'SPEED (knots):' : 'SPEED (km/h):'}
-                                </span>
-                                <span className="text-blue-400 font-mono text-xs">
-                                  {weapon.speed.toLocaleString()}
-                                </span>
-                              </div>
-
-                              <div className="flex justify-between">
-                                <span className="text-tactical-muted text-xs">RANGE (km):</span>
-                                <span className="text-green-400 font-mono text-xs">
-                                  {weapon.range.toLocaleString()}
-                                </span>
-                              </div>
-
-                              <div className="flex justify-between">
-                                <span className="text-tactical-muted text-xs">TOTAL VALUE:</span>
-                                <span className="text-yellow-400 font-mono text-xs">
-                                  {formatCost(weapon.cost * weapon.quantity)}
-                                </span>
-                              </div>
-                            </div>
-
-                            {/* Status Indicator */}
-                            <div className="pt-2 border-t border-tactical-border/50">
-                              <div className="flex items-center justify-center space-x-2">
-                                <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-                                <span className="text-green-400 text-xs font-mono">OPERATIONAL</span>
-                              </div>
+                            <div className="text-2xl font-tactical text-neon-400">
+                              {formatCost(Number(getTotalArsenalValue(country, selectedWeaponType)))}
                             </div>
                           </div>
-                        </motion.div>
-                      ))}
-                    </div>
-
-                    {/* Total Arsenal Value */}
-                    <div className="tactical-panel p-4 rounded bg-tactical-bg/50">
-                      <div className="text-center">
-                        <div className="text-tactical-muted text-xs font-mono mb-2">
-                          TOTAL {selectedWeaponType === 'all' ? 'ARSENAL' : selectedWeaponType.toUpperCase()} VALUE
                         </div>
-                        <div className="text-2xl font-tactical text-neon-400">
-                          {formatCost(Number(getTotalArsenalValue(country, selectedWeaponType)))}
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </motion.div>
-              )}
-            </Card>
-          </motion.div>
-        ))}
+                      </CardContent>
+                    </motion.div>
+                  )}
+                </div>
+              </Card>
+            </motion.div>
+          ))}
+        </div>
       </div>
     </div>
   );

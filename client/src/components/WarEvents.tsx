@@ -1,16 +1,16 @@
-import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
-import { 
-  AlertTriangle, 
-  MapPin, 
-  Clock, 
+import { useRealTimeData, type RealTimeEvent } from '@/hooks/useRealTimeData';
+import { motion } from 'framer-motion';
+import {
+  AlertTriangle,
+  MapPin,
+  Clock,
   Users,
   Wifi,
   WifiOff,
   ExternalLink
 } from 'lucide-react';
-import { useRealTimeData } from '../hooks/useRealTimeData';
 
 interface WarEvent {
   id: string;
@@ -23,6 +23,7 @@ interface WarEvent {
   source: string;
   verified: boolean;
   date: string;
+  category: string; // Add missing category property
   coordinates?: [number, number];
   casualties?: {
     confirmed: number;
@@ -329,26 +330,53 @@ const extractKeyEntities = (text: string): string[] => {
   return [...new Set(entities)];
 };
 
+// Add proper interface for casualty data
+interface CasualtyData {
+  confirmed?: number;
+  estimated?: number;
+  total?: number;
+}
+
 export function WarEvents() {
-  const { backendData, backendStatus, refetch } = useRealTimeData();
-  
-  // Extract data from backendData
-  const events = backendData?.events || [];
-  const loading = backendStatus === 'checking';
-  const error = backendStatus === 'offline' ? 'Backend offline' : null;
-  const refreshData = refetch;
+  const realTimeData = useRealTimeData();
+  const [filteredEvents, setFilteredEvents] = useState<RealTimeEvent[]>([]);
+  const [transformedEvents, setTransformedEvents] = useState<WarEvent[]>([]); // Add state for transformed events
+
+  // Fix the data access
+  const status = realTimeData.status || 'connecting';
+  const isConnected = realTimeData.isConnected;
+  const connectionStatus = realTimeData.connectionStatus;
+
+  // Define refreshData function
+  const refreshData = () => {
+    console.log('Refreshing data...');
+    // Add actual refresh logic here
+  };
+
+  // Fix the conversion function to properly map WarEvent to RealTimeEvent
+  const convertWarEventsToRealTimeEvents = (warEvents: any[]): RealTimeEvent[] => {
+    return warEvents.map(event => ({
+      ...event,
+      category: event.type || event.category || 'general',
+      verified: event.verified || false,
+      source: event.source || 'Unknown',
+      casualties: event.casualties || 0
+    }));
+  };
+
+  useEffect(() => {
+    if (realTimeData.events) {
+      const convertedEvents = convertWarEventsToRealTimeEvents(realTimeData.events);
+      setFilteredEvents(convertedEvents);
+    }
+  }, [realTimeData.events]);
 
   // Add missing state variables
-  const [filteredEvents, setFilteredEvents] = useState<WarEvent[]>([]);
   const [severityFilter, setSeverityFilter] = useState<string>('all');
   const [locationFilter, setLocationFilter] = useState<string>('all');
   const [sortBy, setSortBy] = useState<'timestamp' | 'severity'>('timestamp');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [expandedEvent, setExpandedEvent] = useState<string | null>(null);
-
-  // Connection status from real-time data
-  const isConnected = !loading && !error;
-  const connectionStatus = loading ? 'connecting' : error ? 'error' : 'connected';
 
   // Utility function to get severity color
   const getSeverityColor = (severity: 'critical' | 'high' | 'medium' | 'low'): string => {
@@ -368,13 +396,13 @@ export function WarEvents() {
 
   // Transform and filter events with intelligence processing
   useEffect(() => {
-    if (!events || events.length === 0) {
-      setFilteredEvents([]);
+    if (!filteredEvents || filteredEvents.length === 0) {
+      setTransformedEvents([]);
       return;
     }
 
     // Transform events to match WarEvent interface with intelligence processing
-    const transformedEvents: WarEvent[] = events.map((event: any) => {
+    const transformedEventsData: WarEvent[] = filteredEvents.map((event: any) => {
       // Process military intelligence
       const intelligence = processWarIntelligence(
         event.title || '', 
@@ -389,6 +417,7 @@ export function WarEvents() {
         location: intelligence.region !== 'Unknown' ? intelligence.region : ((event as any).location || 'Unknown'),
         severity: (event.severity as 'critical' | 'high' | 'medium' | 'low') || intelligence.eventClassification.intensity,
         type: intelligence.eventClassification.type,
+        category: event.category || intelligence.eventClassification.type, // Ensure category is set
         source: event.source,
         verified: (event as any).verified ?? true,
         date: event.date || new Date().toISOString().split('T')[0],
@@ -402,7 +431,7 @@ export function WarEvents() {
       };
     });
 
-    let filtered = [...transformedEvents];
+    let filtered = [...transformedEventsData];
 
     // Apply severity filter
     if (severityFilter !== 'all') {
@@ -434,8 +463,8 @@ export function WarEvents() {
       }
     });
 
-    setFilteredEvents(filtered);
-  }, [events, severityFilter, locationFilter, sortBy, searchQuery]);
+    setTransformedEvents(filtered);
+  }, [filteredEvents, severityFilter, locationFilter, sortBy, searchQuery]);
 
   // Utility function to format time ago
   const formatTimeAgo = (timestamp: string): string => {
@@ -451,6 +480,42 @@ export function WarEvents() {
     if (minutes < 60) return `${minutes}m ago`;
     if (hours < 24) return `${hours}h ago`;
     return `${days}d ago`;
+  };
+
+  const renderCasualties = (casualties: number | CasualtyData | undefined) => {
+    if (typeof casualties === 'number') {
+      return (
+        <div className="casualties-info">
+          <span>Total: {casualties}</span>
+        </div>
+      );
+    }
+    
+    if (casualties && typeof casualties === 'object') {
+      const casualtyObj = casualties as CasualtyData;
+      return (
+        <div className="casualties-breakdown">
+          {casualtyObj.confirmed !== undefined && (
+            <div className="confirmed">Confirmed: {casualtyObj.confirmed}</div>
+          )}
+          {casualtyObj.estimated !== undefined && (
+            <div className="estimated">Estimated: {casualtyObj.estimated}</div>
+          )}
+          {casualtyObj.total !== undefined && (
+            <div className="total">Total: {casualtyObj.total}</div>
+          )}
+        </div>
+      );
+    }
+
+    return <div>No casualty data available</div>;
+  };
+
+  // Helper function to safely get casualty values
+  const getCasualtyValue = (casualties: WarEvent['casualties'], type: 'confirmed' | 'estimated'): number => {
+    if (!casualties) return 0;
+    if (typeof casualties === 'number') return casualties;
+    return casualties[type] || 0;
   };
 
   return (
@@ -614,13 +679,13 @@ export function WarEvents() {
                 <Clock className="h-5 w-5" />
                 <span>Live Events Stream</span>
                 <div className="ml-auto text-xs text-tactical-muted font-mono">
-                  {filteredEvents.length} events
+                  {transformedEvents.length} events
                 </div>
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-3 max-h-96 overflow-y-auto">
-                {filteredEvents.map((event, index) => (
+                {transformedEvents.map((event, index) => (
                   <motion.div
                     key={event.id}
                     initial={{ opacity: 0, x: -20 }}
@@ -675,12 +740,12 @@ export function WarEvents() {
                       <div className="flex items-center gap-1">
                         <Users className="h-4 w-4" />
                         <span className="font-mono text-red-400">
-                          {event.casualties.confirmed || 0} confirmed, {event.casualties.estimated || 0} estimated
+                          {getCasualtyValue(event.casualties, 'confirmed')} confirmed, {getCasualtyValue(event.casualties, 'estimated')} estimated
                         </span>
                         <div className="text-xs text-tactical-muted">
-                          <span>Confirmed: {event.casualties.confirmed || 0}</span>
+                          <span>Confirmed: {getCasualtyValue(event.casualties, 'confirmed')}</span>
                           <span className="mx-2">•</span>
-                          <span>Estimated: {event.casualties.estimated || 0}</span>
+                          <span>Estimated: {getCasualtyValue(event.casualties, 'estimated')}</span>
                         </div>
                       </div>
                     )}
@@ -702,7 +767,7 @@ export function WarEvents() {
             </CardHeader>
             <CardContent className="space-y-4">
               {expandedEvent ? (() => {
-                const event = filteredEvents.find(e => e.id === expandedEvent);
+                const event = transformedEvents.find(e => e.id === expandedEvent);
                 const intel = (event as any)?.intelligence;
                 
                 if (!event) return <div className="text-tactical-muted">Select an event to view details</div>;

@@ -3,10 +3,11 @@ import React from 'react';
 interface CardProps {
   children: React.ReactNode;
   className?: string;
+  onClick?: () => void;
 }
 
-export const Card: React.FC<CardProps> = ({ children, className = '' }) => (
-  <div className={`tactical-panel border border-tactical-border rounded-lg ${className}`}>
+export const Card: React.FC<CardProps> = ({ children, className = '', onClick }) => (
+  <div className={`tactical-panel border border-tactical-border rounded-lg ${className}`} onClick={onClick}>
     {children}
   </div>
 );
