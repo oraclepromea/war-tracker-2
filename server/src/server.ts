@@ -295,4 +295,18 @@ server.listen(PORT, async () => {
   console.log('✅ All monitoring systems active');
 });
 
+// Make sure this file exports the app or starts the server
+if (require.main === module) {
+  // Start server only if this file is run directly
+  //server.listen(PORT, async () => {
+  //  console.log(`🚀 War Tracker API Server running on port ${PORT}`);
+  //  console.log(`📡 WebSocket server ready for real-time events`);
+  //  
+  //  // Start continuous aggregation after server starts
+  //  await startContinuousAggregation();
+  //  
+  //  console.log('✅ All monitoring systems active');
+  //});
+}
+
 export { app, io };

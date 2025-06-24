@@ -57,6 +57,8 @@ export interface Event {
 export class EnhancedDataSourceManager {
   private static instance: EnhancedDataSourceManager;
   private aiAnalyzer: AIEventAnalyzer;
+  private timeout: number = 15000; // 15 seconds timeout
+  private parser: Parser = new Parser();
   
   // MASSIVELY EXPANDED data sources including government and social media
   private dataSources: DataSource[] = [
@@ -390,7 +392,7 @@ export class EnhancedDataSourceManager {
     
     if (source.type === 'rss') {
       console.log(`📡 EnhancedDataSourceManager: Fetching RSS from ${source.url}`);
-      return this.fetchRSSFeed(source.url, source.name, []);
+      return this.fetchRSSFeed(source.url, source.name);
     }
     
     console.warn(`⚠️ EnhancedDataSourceManager: Unknown source type: ${source.type} for ${source.name}`);

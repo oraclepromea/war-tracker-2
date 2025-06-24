@@ -353,3 +353,8 @@ const startMultiLanguageMonitoring = () => {
   console.log('🌍 DISABLED: Multi-language monitoring (preventing mock data)');
   // Completely disabled to prevent any mock data generation
 };
+
+// Make sure this file exists and has proper imports
+import './server';
+
+// Or whatever your main server startup code is
