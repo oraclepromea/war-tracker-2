@@ -1,8 +1,13 @@
 import express from 'express';
 import cors from 'cors';
 import routes from './routes';
+import { EnhancedDataSourceManager } from './services/enhancedDataSources';
+import { RSSService } from './services/rssService';
 
 const app = express();
+
+// Initialize the data source manager
+const dataSourceManager = EnhancedDataSourceManager.getInstance();
 
 // CORS configuration
 app.use(cors({
@@ -309,3 +314,4 @@ app.listen(PORT, () => {
 });
 
 export default app;
+export { dataSourceManager };

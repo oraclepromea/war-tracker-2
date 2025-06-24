@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
-import { apiService } from '../services/api';
+import { apiService } from '../../client/src/services/api';
 
 interface RSSArticle {
   id: string;
