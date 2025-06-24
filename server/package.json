@@ -6,7 +6,10 @@
   "scripts": {
     "start": "node dist/server.js",
     "dev": "ts-node-dev --respawn --transpile-only src/server.ts",
-    "build": "tsc --outDir dist"
+    "build": "tsc --outDir dist",
+    "kill-port": "npx kill-port 3000",
+    "dev:clean": "npm run kill-port && npm run dev",
+    "test": "echo \"Add tests here\" && exit 0"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.50.0",

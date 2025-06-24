@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
-import { apiService } from '../../client/src/services/api';
+import { apiRequest, API_ENDPOINTS } from '../../client/src/config/api';
 
 interface RSSArticle {
   id: string;
@@ -84,7 +84,7 @@ export default function Live() {
     try {
       console.log('🔄 Live: Fetching articles from server...');
       
-      const data = await apiService.getLive();
+      const data = await apiRequest(API_ENDPOINTS.live);
       
       setArticles(data.articles);
       setSources(data.sources);

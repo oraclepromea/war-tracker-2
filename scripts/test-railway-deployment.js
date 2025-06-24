@@ -1,25 +1,58 @@
-const fetch = require('node-fetch');
+const https = require('https');
 
 const RAILWAY_URL = 'https://war-tracker-20-production.up.railway.app';
 
 async function testEndpoint(path, description) {
-  try {
+  return new Promise((resolve) => {
     console.log(`🔍 Testing ${description}...`);
-    const response = await fetch(`${RAILWAY_URL}${path}`);
     
-    if (response.ok) {
-      const data = await response.json();
-      console.log(`✅ ${description}: OK (${response.status})`);
-      console.log(`📊 Response:`, JSON.stringify(data, null, 2));
-    } else {
-      console.log(`❌ ${description}: Failed (${response.status})`);
-      const text = await response.text();
-      console.log(`📄 Response:`, text.substring(0, 200));
-    }
-  } catch (error) {
-    console.log(`💥 ${description}: Error - ${error.message}`);
-  }
-  console.log('---');
+    const options = {
+      hostname: 'war-tracker-20-production.up.railway.app',
+      port: 443,
+      path: path,
+      method: 'GET'
+    };
+
+    const req = https.request(options, (res) => {
+      let data = '';
+      
+      res.on('data', (chunk) => {
+        data += chunk;
+      });
+      
+      res.on('end', () => {
+        if (res.statusCode === 200) {
+          console.log(`✅ ${description}: OK (${res.statusCode})`);
+          try {
+            const jsonData = JSON.parse(data);
+            console.log(`📊 Response:`, JSON.stringify(jsonData, null, 2));
+          } catch (e) {
+            console.log(`📄 Response:`, data.substring(0, 200));
+          }
+        } else {
+          console.log(`❌ ${description}: Failed (${res.statusCode})`);
+          console.log(`📄 Response:`, data.substring(0, 200));
+        }
+        console.log('---');
+        resolve();
+      });
+    });
+
+    req.on('error', (error) => {
+      console.log(`💥 ${description}: Error - ${error.message}`);
+      console.log('---');
+      resolve();
+    });
+
+    req.setTimeout(10000, () => {
+      console.log(`⏰ ${description}: Timeout`);
+      req.destroy();
+      console.log('---');
+      resolve();
+    });
+
+    req.end();
+  });
 }
 
 async function testRailwayDeployment() {

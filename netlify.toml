@@ -1,24 +1,18 @@
 [build]
-  base = "client"
-  publish = "dist"
-  command = "npm run build"
+  command = "cd client && npm run build"
+  publish = "client/dist"
 
 [build.environment]
-  NODE_VERSION = "18"
-  VITE_API_BASE_URL = "https://war-tracker-20-production.up.railway.app"
-  VITE_SUPABASE_URL = "https://prmjtsiyeovmkujtbjwi.supabase.co"
-  VITE_SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBybWp0c2l5ZW92bWt1anRiandpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA1NjMyMzUsImV4cCI6MjA2NjEzOTIzNX0.lqv_1rW2P_2O0PH8cn15wMXoueZT8o_HQ5bm1bfk6cM"
+  VITE_API_URL = "https://war-tracker-20-production.up.railway.app"
+  VITE_SUPABASE_URL = "https://your-project-ref.supabase.co"
+  VITE_SUPABASE_ANON_KEY = "your-anon-key"
 
-# Redirect rules for SPA
+[[redirects]]
+  from = "/api/*"
+  to = "https://war-tracker-20-production.up.railway.app/api/:splat"
+  status = 200
+
 [[redirects]]
   from = "/*"
   to = "/index.html"
   status = 200
-
-# Add headers for CORS
-[[headers]]
-  for = "/api/*"
-  [headers.values]
-    Access-Control-Allow-Origin = "*"
-    Access-Control-Allow-Methods = "GET, POST, PUT, DELETE, OPTIONS"
-    Access-Control-Allow-Headers = "Content-Type, Authorization"

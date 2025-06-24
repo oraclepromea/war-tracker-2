@@ -3,33 +3,46 @@ import cors from 'cors';
 
 const app = express();
 
-app.use(cors());
+// CORS configuration for production and development
+app.use(cors({
+  origin: [
+    process.env.FRONTEND_URL || 'https://war-tracker-frontend.netlify.app',
+    'http://localhost:3000',
+    'http://localhost:5173'
+  ],
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
+
 app.use(express.json());
 
-// Health check endpoint - MUST BE FIRST
-app.get('/api/health', (req, res) => {
+// Required Routes (Railway health checks need these!)
+app.get('/health', (req, res) => {
   res.status(200).json({ 
-    success: true, 
-    status: 'healthy',
-    timestamp: new Date().toISOString(),
-    version: '2.0.0',
-    uptime: process.uptime(),
-    port: process.env.PORT || 8080,
-    environment: process.env.NODE_ENV || 'development'
-  });
-});
-
-// Root route
-app.get('/', (req, res) => {
-  res.json({ 
-    success: true, 
-    message: 'War Tracker 2.0 API is running',
+    status: 'ok',
     timestamp: new Date().toISOString(),
     version: '2.0.0'
   });
 });
 
-// API routes
+app.get('/api/health', (req, res) => {
+  res.status(200).json({ 
+    success: true, 
+    status: 'healthy',
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime()
+  });
+});
+
+// API Routes
+app.get('/api/events', (req, res) => {
+  res.json({
+    success: true,
+    data: [],
+    timestamp: new Date().toISOString()
+  });
+});
+
 app.get('/api/news', (req, res) => {
   res.json({
     success: true,
@@ -38,10 +51,10 @@ app.get('/api/news', (req, res) => {
   });
 });
 
-app.get('/api/events', (req, res) => {
+app.post('/api/jobs/news', (req, res) => {
   res.json({
     success: true,
-    data: [],
+    message: 'News sync job triggered',
     timestamp: new Date().toISOString()
   });
 });
@@ -51,6 +64,24 @@ app.get('/api/live', (req, res) => {
     success: true,
     data: [],
     timestamp: new Date().toISOString()
+  });
+});
+
+// Root route
+app.get('/', (req, res) => {
+  res.json({ 
+    success: true, 
+    message: 'War Tracker 2.0 API is running',
+    endpoints: ['/health', '/api/health', '/api/events', '/api/news', '/api/live']
+  });
+});
+
+// 404 handler
+app.use('*', (req, res) => {
+  res.status(404).json({
+    success: false,
+    error: `Route ${req.originalUrl} not found`,
+    availableRoutes: ['/health', '/api/health', '/api/events', '/api/news', '/api/live']
   });
 });
 
