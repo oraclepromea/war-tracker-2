@@ -1,24 +1,29 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
-import { LiveEventsFeed } from './components/LiveEventsFeed'
-import { WarEvents } from './components/WarEvents'
-import { CountriesAndForces } from './components/CountriesAndForces'
-import { LiveNews } from './components/LiveNews'
-import './App.css'
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { Navigation } from './components/Navigation';
+import { Dashboard } from './pages/Dashboard';
+import { LiveNews } from './pages/LiveNews';
+import { WarNews } from './pages/WarNews';
+import { CountriesAndForces } from './components/CountriesAndForces';
+import { WeaponsManagement } from './components/WeaponsManagement';
+import './App.css';
 
 function App() {
   return (
     <Router>
       <div className="min-h-screen bg-tactical-bg">
-        <Routes>
-          <Route path="/" element={<Navigate to="/events" replace />} />
-          <Route path="/events" element={<WarEvents />} />
-          <Route path="/feed" element={<LiveEventsFeed />} />
-          <Route path="/countries" element={<CountriesAndForces />} />
-          <Route path="/news" element={<LiveNews />} />
-        </Routes>
+        <Navigation />
+        <main className="container mx-auto">
+          <Routes>
+            <Route path="/" element={<Dashboard />} />
+            <Route path="/live" element={<LiveNews />} />
+            <Route path="/events" element={<WarNews />} />
+            <Route path="/countries" element={<CountriesAndForces />} />
+            <Route path="/weapons" element={<WeaponsManagement />} />
+          </Routes>
+        </main>
       </div>
     </Router>
-  )
+  );
 }
 
-export default App
+export default App;
