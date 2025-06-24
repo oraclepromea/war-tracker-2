@@ -15,7 +15,7 @@ import {
   ArrowUpDown,
   Hash,
   CheckCircle,
-  Activity
+  Activity  // Add Activity to replace Zap
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
@@ -25,7 +25,7 @@ import {
   API_BASE_URL 
 } from '../lib/api';
 
-// Add missing interfaces
+// Enhanced NewsItem interface with better data quality
 interface NewsItem {
   id: string;
   title: string;
@@ -53,6 +53,7 @@ interface NewsItem {
   isNew?: boolean;
 }
 
+// Enhanced filter interface
 interface NewsFilters {
   search: string;
   sources: string[];
@@ -65,15 +66,6 @@ interface NewsFilters {
   };
   sortBy: 'date' | 'priority' | 'relevance' | 'source';
   sortOrder: 'asc' | 'desc';
-}
-
-interface NewsSource {
-  name: string;
-  category: string;
-  language: string;
-  url: string;
-  needsTranslation: boolean;
-  priority: string;
 }
 
 // Extract keywords from content
@@ -115,11 +107,6 @@ const formatRelativeTime = (dateString: string): string => {
 };
 
 export function LiveNews() {
-  // Remove unused state variables
-  // const [newsData, setNewsData] = useState<any[]>([]);
-  // const [selectedCategories] = useState<Set<string>>(new Set());
-  // const [selectedLanguages] = useState<Set<string>>(new Set());
-
   const [articles, setArticles] = useState<NewsItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -152,8 +139,8 @@ export function LiveNews() {
   const itemsPerPage = 20;
   
   // Get unique categories and languages
-  const categories = Array.from(new Set(RSS_SOURCES.map((source: NewsSource) => source.category)));
-const languages = Array.from(new Set(RSS_SOURCES.map((source: NewsSource) => source.language)));
+  const categories = Array.from(new Set(RSS_SOURCES.map(source => source.category)));
+  const languages = Array.from(new Set(RSS_SOURCES.map(source => source.language)));
   const uniqueSources = Array.from(new Set(articles.map(item => item.source)));
 
   // Enhanced filtering and sorting logic
@@ -167,7 +154,7 @@ const languages = Array.from(new Set(RSS_SOURCES.map((source: NewsSource) => sou
         item.title.toLowerCase().includes(searchTerm) ||
         item.description.toLowerCase().includes(searchTerm) ||
         item.source.toLowerCase().includes(searchTerm) ||
-        item.keywords?.some((keyword: string) => keyword.toLowerCase().includes(searchTerm))
+        item.keywords?.some(keyword => keyword.toLowerCase().includes(searchTerm))
       );
     }
 
@@ -212,8 +199,8 @@ const languages = Array.from(new Set(RSS_SOURCES.map((source: NewsSource) => sou
           comparison = new Date(b.pubDate).getTime() - new Date(a.pubDate).getTime();
           break;
         case 'priority':
-          const priorityOrder: { [key: string]: number } = { high: 3, medium: 2, low: 1 };
-          comparison = (priorityOrder[b.priority] || 1) - (priorityOrder[a.priority] || 1);
+          const priorityOrder: { [key in 'high' | 'medium' | 'low']: number } = { high: 3, medium: 2, low: 1 };
+          comparison = priorityOrder[b.priority] - priorityOrder[a.priority];
           break;
         case 'relevance':
           const getRelevanceScore = (item: NewsItem) => {
@@ -454,7 +441,7 @@ const languages = Array.from(new Set(RSS_SOURCES.map((source: NewsSource) => sou
   }, [autoRefresh, refreshInterval]);
 
   // Filter handlers
-  const updateFilters = (newFilters: Partial<NewsFilters>) => {
+  const updateFilters = (newFilters: Partial<typeof filters>) => {
     setFilters(prev => ({ ...prev, ...newFilters }));
     setCurrentPage(1);
   };
@@ -528,6 +515,16 @@ const languages = Array.from(new Set(RSS_SOURCES.map((source: NewsSource) => sou
       </div>
     );
   }
+
+  // Fix: Replace Zap with Activity icon
+  const getCategoryIcon = (category: string) => {
+    switch (category?.toLowerCase()) {
+      case 'military': return <Activity className="w-4 h-4" />;
+      case 'civilian': return <AlertTriangle className="w-4 h-4" />;
+      case 'diplomatic': return <Globe className="w-4 h-4" />;
+      default: return <Clock className="w-4 h-4" />;
+    }
+  };
 
   return (
     <div className="min-h-screen bg-tactical-bg p-4 md:p-6" onClick={() => setNewArticleCount(0)}>
@@ -957,7 +954,7 @@ const languages = Array.from(new Set(RSS_SOURCES.map((source: NewsSource) => sou
                           <div className="flex items-center space-x-1">
                             <Hash className="w-3 h-3 text-tactical-muted" />
                             <div className="flex space-x-1">
-                              {item.tags?.slice(0, 3).map((tag: string) => (
+                              {item.tags.slice(0, 3).map(tag => (
                                 <span
                                   key={tag}
                                   className="px-1 py-0.5 bg-tactical-dark/30 text-tactical-muted rounded text-xs"

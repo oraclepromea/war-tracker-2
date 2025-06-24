@@ -1,65 +1,86 @@
-import { API_BASE_URL } from '../config/api';
+import { supabase } from '../lib/supabase'
 
 export interface Article {
-  id: string;
-  title: string;
-  content: string;
-  source: string;
-  url: string;
-  publishedAt: string;
-  category: string;
+  id: string
+  title: string
+  link: string
+  summary: string
+  published_at: string
+  source: string
+  image_url?: string
+  created_at: string
 }
-
-export async function fetchArticles() {
-  try {
-    const response = await fetch('/api/articles');
-    return await response.json();
-  } catch (error) {
-    console.error('Failed to fetch articles:', error);
-    return [];
-  }
-}
-
-export const fetchArticleById = async (id: string): Promise<Article | null> => {
-  try {
-    const response = await fetch(`${API_BASE_URL}/api/articles/${id}`);
-    
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-    
-    const data = await response.json();
-    return data.article || null;
-  } catch (error) {
-    console.error('Error fetching article:', error);
-    return null;
-  }
-};
-
-export const searchArticles = async (query: string): Promise<Article[]> => {
-  try {
-    const response = await fetch(`${API_BASE_URL}/api/articles/search?q=${encodeURIComponent(query)}`);
-    
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-    
-    const data = await response.json();
-    return data.articles || [];
-  } catch (error) {
-    console.error('Error searching articles:', error);
-    return [];
-  }
-};
 
 export class ArticlesService {
-  static async getLatestArticles() {
-    // Mock implementation
-    return [];
+  // Get latest articles
+  static async getLatestArticles(limit = 50): Promise<Article[]> {
+    const { data, error } = await supabase
+      .from('articles')
+      .select('*')
+      .order('published_at', { ascending: false })
+      .limit(limit)
+
+    if (error) {
+      console.error('Error fetching articles:', error)
+      throw error
+    }
+
+    return data || []
   }
-  
-  static async searchArticles(_query: string) {
-    // Mock implementation
-    return [];
+
+  // Get articles by source
+  static async getArticlesBySource(source: string, limit = 20): Promise<Article[]> {
+    const { data, error } = await supabase
+      .from('articles')
+      .select('*')
+      .eq('source', source)
+      .order('published_at', { ascending: false })
+      .limit(limit)
+
+    if (error) {
+      console.error('Error fetching articles by source:', error)
+      throw error
+    }
+
+    return data || []
+  }
+
+  // Search articles
+  static async searchArticles(query: string, limit = 30): Promise<Article[]> {
+    const { data, error } = await supabase
+      .from('articles')
+      .select('*')
+      .or(`title.ilike.%${query}%,summary.ilike.%${query}%`)
+      .order('published_at', { ascending: false })
+      .limit(limit)
+
+    if (error) {
+      console.error('Error searching articles:', error)
+      throw error
+    }
+
+    return data || []
+  }
+
+  // Manually trigger RSS fetch (calls the edge function)
+  static async triggerRSSFetch(): Promise<any> {
+    try {
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/rssFetcher`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error triggering RSS fetch:', error);
+      throw error;
+    }
   }
 }

@@ -1,80 +1,92 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import { apiRequest, API_ENDPOINTS, API_BASE_URL } from '../config/api';
 
-export interface RealTimeEvent {
-  id: string;
-  title: string;
-  description: string;
-  timestamp: string;
-  severity: 'low' | 'medium' | 'high' | 'critical';
-  location: string;
-  source: string;
-  category: string;
-  verified: boolean;
-  type?: string;
-  casualties?: number | {
-    confirmed?: number;
-    estimated?: number;
-    total?: number;
-  };
+// FIXED: Add missing interfaces and functions
+interface BackendData {
+  articles: any[];
+  events: any[];
+  weapons: any[];
+  status: string;
 }
 
-export interface WarEvent {
-  id: string;
-  title: string;
-  description: string;
-  timestamp: string;
-  severity: 'low' | 'medium' | 'high' | 'critical';
-  location: string;
-  source: string;
-  type?: string;
-  verified?: boolean;
-  casualties?: number | {
-    confirmed?: number;
-    estimated?: number;
-    total?: number;
-  };
-}
+const getFallbackData = (): BackendData => ({
+  articles: [],
+  events: [],
+  weapons: [],
+  status: 'offline'
+});
 
-export interface RealTimeData {
-  events: RealTimeEvent[];
-  status: 'connecting' | 'connected' | 'disconnected' | 'error';
-  isConnected: boolean; // Added missing property
-  connectionStatus: string; // Added missing property
-}
+export const useRealTimeData = () => {
+  // FIXED: Add missing state variables
+  const [backendData, setBackendData] = useState<BackendData>(getFallbackData());
+  const [backendStatus, setBackendStatus] = useState<'online' | 'offline' | 'checking'>('checking');
 
-export function useRealTimeData(): RealTimeData {
-  const [data, setData] = useState<RealTimeData>({
-    events: [],
-    status: 'connecting',
-    isConnected: false,
-    connectionStatus: 'Connecting...'
-  });
+  // FIXED: Add better error handling and fallbacks
+  const fetchBackendData = useCallback(async () => {
+    try {
+      console.log('🔍 useRealTimeData: Starting data fetch...');
+      
+      // Check if backend is available first
+      const healthCheck = await fetch(`${API_BASE_URL}/health`, {
+        method: 'GET',
+        mode: 'cors',
+        headers: {
+          'Accept': 'application/json',
+        },
+      }).catch(() => null);
 
-  useEffect(() => {
-    // Simulate real-time data connection
-    const mockEvents: RealTimeEvent[] = [
-      {
-        id: '1',
-        title: 'Sample Event',
-        description: 'This is a sample real-time event',
-        timestamp: new Date().toISOString(),
-        severity: 'medium',
-        location: 'Sample Location',
-        source: 'Sample Source',
-        category: 'military',
-        type: 'conflict',
-        verified: true,
-        casualties: 0
+      if (!healthCheck || !healthCheck.ok) {
+        console.log('⚠️ Backend not available, using fallback data');
+        setBackendStatus('offline');
+        setBackendData(getFallbackData());
+        return;
       }
-    ];
 
-    setData({
-      events: mockEvents,
-      status: 'connected',
-      isConnected: true,
-      connectionStatus: 'Connected'
-    });
+      // Fetch actual data
+      const data = await apiRequest('/api/news');
+      setBackendData(data);
+      setBackendStatus('online');
+      
+    } catch (error) {
+      console.error('⚠️ Backend not available:', error);
+      setBackendStatus('offline');
+      setBackendData(getFallbackData());
+    }
   }, []);
 
-  return data;
-}
+  const checkAPIHealth = async (): Promise<boolean> => {
+    try {
+      await apiRequest('/health');
+      console.log('✅ API is healthy');
+      return true;
+    } catch (error) {
+      console.log('⚠️ Backend not available:', error);
+      return false;
+    }
+  };
+
+  const fetchEvents = async () => {
+    try {
+      const data = await apiRequest(API_ENDPOINTS.events);
+      // ...existing code...
+    } catch (error) {
+      console.error('Failed to fetch events:', error);
+      // ...existing code...
+    }
+  };
+
+  // FIXED: Use fetchBackendData in useEffect
+  useEffect(() => {
+    fetchBackendData();
+    
+    // Set up auto-refresh
+    const interval = setInterval(fetchBackendData, 30000);
+    return () => clearInterval(interval);
+  }, [fetchBackendData]);
+
+  return {
+    backendData,
+    backendStatus,
+    refetch: fetchBackendData
+  };
+};

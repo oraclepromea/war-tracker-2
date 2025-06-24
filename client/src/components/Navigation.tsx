@@ -1,87 +1,56 @@
-import { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
+import { 
+  Activity
+} from 'lucide-react';
 
-export function Navigation() {
-  const location = useLocation();
-  const [isOpen, setIsOpen] = useState(false);
+interface NavigationProps {
+  activeTab: string;
+  onTabChange: (tab: string) => void;
+  tabs: Array<{
+    name: string;
+    icon: string;
+    component: React.ComponentType;
+  }>;
+}
 
-  const navItems = [
-    { path: '/', label: 'DASHBOARD', icon: '🎯' },
-    { path: '/live', label: 'LIVE NEWS', icon: '📡' },
-    { path: '/events', label: 'WAR EVENTS', icon: '⚔️' },
-    { path: '/countries', label: 'COUNTRIES', icon: '🌍' },
-    { path: '/weapons', label: 'WEAPONS', icon: '🚀' }
-  ];
-
+export function Navigation({ activeTab, onTabChange, tabs }: NavigationProps) {
   return (
-    <nav className="bg-tactical-panel border-b border-tactical-border">
-      <div className="container mx-auto px-4">
+    <nav className="tactical-panel border-b border-tactical-border">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
-          {/* Logo */}
-          <Link to="/" className="flex items-center space-x-3">
-            <div className="text-2xl">⚡</div>
-            <div className="text-xl font-tactical text-neon-400">
+          <div className="flex items-center space-x-2">
+            <Activity className="h-8 w-8 text-neon-400 animate-pulse" />
+            <h1 className="text-xl font-tactical font-bold text-neon-400">
               WAR TRACKER 2.0
+            </h1>
+            <div className="text-xs text-tactical-muted font-mono">
+              [MIDDLE EAST CONFLICT MONITOR]
             </div>
-          </Link>
-
-          {/* Desktop Navigation */}
-          <div className="hidden md:flex space-x-8">
-            {navItems.map((item) => (
-              <Link
-                key={item.path}
-                to={item.path}
-                className={`flex items-center space-x-2 px-3 py-2 rounded font-mono text-sm transition-all ${
-                  location.pathname === item.path
-                    ? 'bg-neon-400/20 text-neon-400 border border-neon-400/50'
-                    : 'text-tactical-muted hover:text-neon-400 hover:bg-tactical-bg'
-                }`}
-              >
-                <span>{item.icon}</span>
-                <span>{item.label}</span>
-              </Link>
-            ))}
           </div>
-
-          {/* Mobile menu button */}
-          <button
-            onClick={() => setIsOpen(!isOpen)}
-            className="md:hidden text-tactical-muted hover:text-neon-400"
-          >
-            <div className="w-6 h-6 flex flex-col justify-center items-center">
-              <span className={`bg-current h-0.5 w-6 transition-all ${isOpen ? 'rotate-45 translate-y-0.5' : ''}`}></span>
-              <span className={`bg-current h-0.5 w-6 transition-all ${isOpen ? 'opacity-0' : 'my-0.5'}`}></span>
-              <span className={`bg-current h-0.5 w-6 transition-all ${isOpen ? '-rotate-45 -translate-y-0.5' : ''}`}></span>
-            </div>
-          </button>
+          
+          <div className="flex space-x-1">
+            {tabs.map((tab) => {
+              const isActive = activeTab === tab.name;
+              
+              return (
+                <Button
+                  key={tab.name}
+                  variant={isActive ? "neon" : "ghost"}
+                  size="sm"
+                  onClick={() => onTabChange(tab.name)}
+                  className={cn(
+                    "flex items-center space-x-2 font-mono text-xs",
+                    isActive && "active-tab"
+                  )}
+                >
+                  <span>{tab.icon}</span>
+                  <span>{tab.name}</span>
+                </Button>
+              );
+            })}
+          </div>
         </div>
-
-        {/* Mobile Navigation */}
-        {isOpen && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            className="md:hidden pb-4"
-          >
-            {navItems.map((item) => (
-              <Link
-                key={item.path}
-                to={item.path}
-                onClick={() => setIsOpen(false)}
-                className={`flex items-center space-x-2 px-3 py-2 rounded font-mono text-sm transition-all block ${
-                  location.pathname === item.path
-                    ? 'bg-neon-400/20 text-neon-400 border border-neon-400/50'
-                    : 'text-tactical-muted hover:text-neon-400 hover:bg-tactical-bg'
-                }`}
-              >
-                <span>{item.icon}</span>
-                <span>{item.label}</span>
-              </Link>
-            ))}
-          </motion.div>
-        )}
       </div>
     </nav>
   );

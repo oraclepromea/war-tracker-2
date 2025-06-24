@@ -83,6 +83,7 @@ export function WeaponsManagement() {
     return matchesSearch && matchesType && matchesStatus;
   });
 
+  // Add the missing getReadinessColor function
   const getReadinessColor = (readiness: number | undefined): string => {
     if (!readiness) return 'bg-gray-500/20 text-gray-400';
     if (readiness > 80) return 'bg-green-500/20 text-green-400';
@@ -212,7 +213,7 @@ export function WeaponsManagement() {
                         style={{ width: `${weapon.operationalReadiness ?? 0}%` }}
                       />
                     </div>
-                  </div>
+locally                   </div>
 
                   <div className="flex space-x-2">
                     <button className="flex-1 bg-tactical-border hover:bg-tactical-border/70 text-tactical-text px-3 py-2 rounded text-sm transition-colors">
