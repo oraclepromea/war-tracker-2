@@ -12,7 +12,7 @@ function App() {
     <Router>
       <div className="min-h-screen bg-tactical-bg">
         <Navigation />
-        <main className="container mx-auto">
+        <main className="container mx-auto px-4">
           <Routes>
             <Route path="/" element={<Dashboard />} />
             <Route path="/live" element={<LiveNews />} />
@@ -27,4 +27,3 @@ function App() {
 }
 
 export default App;
-# Updated Tue Jun 24 19:29:34 -04 2025
