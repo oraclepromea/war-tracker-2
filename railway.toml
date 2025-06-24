@@ -1,17 +1,8 @@
 [build]
-builder = "NIXPACKS"
+builder = "DOCKERFILE"
 
 [deploy]
-startCommand = "npm start"
-healthcheckPath = "/"
+healthcheckPath = "/api/health"
 healthcheckTimeout = 300
 restartPolicyType = "ON_FAILURE"
 restartPolicyMaxRetries = 10
-
-[environments.production.services.backend]
-buildCommand = "npm install"
-startCommand = "npm start"
-
-[environments.production.services.frontend]
-buildCommand = "npm run build"
-startCommand = "npm run preview"

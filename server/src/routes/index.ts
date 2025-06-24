@@ -43,4 +43,14 @@ router.get('/health', (req, res) => {
   });
 });
 
+// Add root route for Railway healthcheck
+router.get('/', (req, res) => {
+  res.json({ 
+    success: true, 
+    message: 'War Tracker 2.0 API is running',
+    timestamp: new Date().toISOString(),
+    version: '2.0.0'
+  });
+});
+
 export default router;

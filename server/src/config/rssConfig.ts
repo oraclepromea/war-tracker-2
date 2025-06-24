@@ -40,3 +40,37 @@ export const FALLBACK_RSS_SOURCES = [
     timeout: 8000
   }
 ];
+
+export const RSS_FEEDS = [
+  // Working feeds only
+  {
+    name: 'BBC World',
+    url: 'https://feeds.bbci.co.uk/news/world/rss.xml',
+    category: 'news',
+    enabled: true
+  },
+  {
+    name: 'Al Jazeera English',
+    url: 'https://www.aljazeera.com/xml/rss/all.xml',
+    category: 'news',
+    enabled: true
+  },
+  {
+    name: 'The Guardian World',
+    url: 'https://www.theguardian.com/world/rss',
+    category: 'news',
+    enabled: true
+  },
+  {
+    name: 'NPR World',
+    url: 'https://feeds.npr.org/1004/rss.xml',
+    category: 'news',
+    enabled: true
+  },
+  {
+    name: 'DW English',
+    url: 'https://rss.dw.com/xml/rss-en-world',
+    category: 'news',
+    enabled: true
+  }
+];

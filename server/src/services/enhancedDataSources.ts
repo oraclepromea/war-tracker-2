@@ -397,72 +397,39 @@ export class EnhancedDataSourceManager {
     return [];
   }
 
-  private async fetchRSSFeed(url: string, sourceName: string, keywords: string[] = []): Promise<Event[]> {
-    console.log(`📡 EnhancedDataSourceManager: fetchRSSFeed called for ${sourceName}`);
-    console.log(`📡 EnhancedDataSourceManager: URL: ${url}`);
-    console.log(`📡 EnhancedDataSourceManager: Keywords: ${keywords}`);
-    
+  private async fetchRSSFeed(url: string, name: string): Promise<any[]> {
     try {
-      const parser = new Parser({
-        timeout: 10000,
+      const response = await fetch(url, {
+        method: 'GET',
         headers: {
-          'User-Agent': 'War-Tracker-Bot/2.0 (+https://github.com/war-tracker)'
-        }
+          'User-Agent': 'War Tracker 2.0 News Aggregator (wartracker@example.com)',
+          'Accept': 'application/rss+xml, application/xml, text/xml, */*',
+          'Accept-Language': 'en-US,en;q=0.9',
+        },
+        signal: AbortSignal.timeout(this.timeout)
       });
 
-      console.log(`📡 EnhancedDataSourceManager: Parsing RSS feed for ${sourceName}...`);
-      const feed = await parser.parseURL(url);
-      console.log(`📡 EnhancedDataSourceManager: RSS feed parsed successfully for ${sourceName}`);
-      console.log(`📡 EnhancedDataSourceManager: Feed title: ${feed.title}`);
-      console.log(`📡 EnhancedDataSourceManager: Feed items count: ${feed.items?.length || 0}`);
-
-      if (!feed.items || feed.items.length === 0) {
-        console.warn(`⚠️ EnhancedDataSourceManager: No items in RSS feed for ${sourceName}`);
-        return [];
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
       }
 
-      const events: Event[] = [];
+      const xml = await response.text();
+      const feed = await this.parser.parseString(xml);
       
-      for (const item of feed.items.slice(0, 20)) { // Limit to 20 items per feed
-        console.log(`📋 EnhancedDataSourceManager: Processing item: ${item.title}`);
-        
-        const content = `${item.title || ''} ${item.contentSnippet || item.content || ''}`.toLowerCase();
-        
-        // Filter by keywords if provided
-        if (keywords.length > 0) {
-          const hasKeyword = keywords.some(keyword => 
-            content.includes(keyword.toLowerCase())
-          );
-          
-          if (!hasKeyword) {
-            console.log(`🔍 EnhancedDataSourceManager: Item filtered out (no keywords): ${item.title}`);
-            continue;
-          }
-        }
-
-        const event: Event = {
-          id: `${sourceName}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-          title: item.title || 'Untitled',
-          description: item.contentSnippet || item.content || 'No description available',
-          source: sourceName,
-          timestamp: new Date(item.timestamp || item.pubDate || Date.now()),
-          link: item.link || undefined,
-          type: 'news',
-          confidence: 0.8,
-          location: 'Unknown',
-        };
-
-        console.log(`✅ EnhancedDataSourceManager: Created event: ${event.title}`);
-        events.push(event);
+      return feed.items || [];
+    } catch (error: any) {
+      if (error.name === 'TimeoutError') {
+        console.log(`❌ ${name}: Request timeout`);
+      } else if (error.message.includes('getaddrinfo ENOTFOUND')) {
+        console.log(`❌ ${name}: DNS resolution failed`);
+      } else if (error.message.includes('403')) {
+        console.log(`❌ ${name}: Access forbidden - may need different User-Agent`);
+      } else if (error.message.includes('404')) {
+        console.log(`❌ ${name}: Feed not found`);
+      } else {
+        console.log(`❌ Error fetching RSS from ${name}:`, error.message);
       }
-
-      console.log(`🎯 EnhancedDataSourceManager: ${sourceName} processed ${events.length} events`);
-      return events;
-
-    } catch (error) {
-      console.error(`❌ EnhancedDataSourceManager: RSS fetch failed for ${sourceName}:`, error);
-      console.error(`❌ EnhancedDataSourceManager: RSS error stack:`, error instanceof Error ? error.stack : 'No stack');
-      throw error;
+      return [];
     }
   }
 
