@@ -1,45 +1,43 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, Index } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn } from 'typeorm';
 
 @Entity('events')
-@Index(['date', 'country'])
-@Index(['source', 'sourceId'], { unique: true })
 export class Event {
   @PrimaryGeneratedColumn('uuid')
-  id: string;
+  id!: string;
 
-  @Column({ length: 100 })
-  source: string; // 'acled', 'gdelt', 'reuters', etc.
+  @Column()
+  source!: string;
 
-  @Column({ length: 255 })
-  sourceId: string;
+  @Column()
+  sourceId!: string;
 
-  @Column({ type: 'timestamptz' })
-  date: Date;
+  @Column()
+  date!: Date;
 
-  @Column({ length: 100 })
-  country: string;
+  @Column()
+  country!: string;
 
-  @Column({ type: 'decimal', precision: 10, scale: 7, nullable: true })
-  latitude: number;
+  @Column('decimal')
+  latitude!: number;
 
-  @Column({ type: 'decimal', precision: 10, scale: 7, nullable: true })
-  longitude: number;
+  @Column('decimal')
+  longitude!: number;
 
-  @Column({ type: 'text' })
-  description: string;
+  @Column()
+  description!: string;
 
-  @Column({ type: 'text', array: true, default: '{}' })
-  urls: string[];
+  @Column('text', { array: true })
+  urls!: string[];
 
-  @Column({ length: 50, default: 'unknown' })
-  severity: string; // 'low', 'medium', 'high', 'critical'
+  @Column()
+  severity!: string;
 
-  @Column({ type: 'text', array: true, default: '{}' })
-  tags: string[];
+  @Column('text', { array: true })
+  tags!: string[];
 
   @CreateDateColumn()
-  createdAt: Date;
+  createdAt!: Date;
 
   @UpdateDateColumn()
-  updatedAt: Date;
+  updatedAt!: Date;
 }

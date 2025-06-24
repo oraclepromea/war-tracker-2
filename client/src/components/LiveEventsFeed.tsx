@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { 
@@ -10,11 +10,16 @@ import {
   Wifi,
   WifiOff
 } from 'lucide-react';
-import { useRealTimeData } from '../hooks/useRealTimeData';
+import { useRealTimeData } from '@/hooks/useRealTimeData';
 
-const LiveEventsFeed: React.FC = () => {
-  const { events, loading, error } = useRealTimeData();
+export function LiveEventsFeed() {
+  const { backendData, backendStatus } = useRealTimeData();
   
+  // Extract events data from backendData
+  const events = backendData?.events || [];
+  const loading = backendStatus === 'checking';
+  const error = backendStatus === 'offline' ? 'Backend offline' : null;
+
   // Get the latest 10 events
   const recentEvents = events.slice(0, 10);
   

@@ -54,7 +54,7 @@ router.get('/sources', async (req, res) => {
   console.log('🌐 API: /api/news/sources endpoint called');
   
   try {
-    const sources = dataSourceManager.getSources();
+    const sources = dataSourceManager.getDataSources();
     console.log('🌐 API: Retrieved sources:', Object.keys(sources));
     
     res.json({

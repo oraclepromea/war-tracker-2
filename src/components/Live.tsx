@@ -81,7 +81,7 @@ export default function Live() {
     try {
       console.log('🔄 Live: Fetching articles from server...');
       
-      const response = await fetch(`${import.meta.env?.VITE_API_URL || 'http://localhost:3001'}/api/live`);
+      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3001'}/api/live`);
       
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);

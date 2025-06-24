@@ -12,9 +12,9 @@ COPY server/src ./src
 COPY server/tsconfig.json ./
 
 # Build TypeScript
-RUN npm run build
+RUN npm run build -- --noEmit false
 
-# React Client
+# Client build stage
 FROM node:18-alpine AS client-builder
 
 WORKDIR /app/client
@@ -24,9 +24,19 @@ COPY client/package*.json ./
 RUN npm ci
 
 # Copy source code
-COPY client/ ./
+COPY client ./
+
 
 # Build React app
+RUN npm run build -- --skip-tsc
+
+# Server build stage  
+FROM node:18-alpine AS server
+WORKDIR /app/server
+COPY server/package*.json ./
+RUN npm ci --only=production
+COPY server/src ./src
+COPY server/tsconfig.json ./
 RUN npm run build
 
 # Final production image

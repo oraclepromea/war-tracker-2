@@ -316,7 +316,7 @@ export class NewsAggregatorJob {
       const feed = await this.parser.parseURL(source.url);
       return feed.items || [];
     } catch (error) {
-      console.warn(`Failed to fetch RSS from ${source.name}:`, error);
+      console.warn(`Failed to fetch RSS from ${source.name}:`, (error as Error).message);
       return [];
     }
   }
@@ -432,7 +432,7 @@ export class NewsAggregatorJob {
           severity: this.calculateNewsSeverity(item.title + ' ' + (item.contentSnippet || ''))
         }));
     } catch (error) {
-      console.warn(`Failed to fetch RSS from ${source.name}:`, error.message);
+      console.warn(`Failed to fetch RSS from ${source.name}:`, (error as Error).message);
       return [];
     }
   }
@@ -536,7 +536,7 @@ export class NewsAggregatorJob {
           }
           
         } catch (error) {
-          console.warn('Failed to process article:', error.message);
+          console.warn('Failed to process article:', (error as Error).message);
         }
       }
       

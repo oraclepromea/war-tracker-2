@@ -1,45 +1,43 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, Index } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn } from 'typeorm';
 
 @Entity('weapons')
-@Index(['category', 'originCountry'])
-@Index(['name'], { unique: true })
 export class Weapon {
   @PrimaryGeneratedColumn('uuid')
-  id: string;
+  id!: string;
 
-  @Column({ length: 255, unique: true })
-  name: string;
+  @Column()
+  name!: string;
 
-  @Column({ length: 50 })
-  category: string; // 'aircraft', 'missiles', 'tanks', 'ships', 'vehicles'
+  @Column()
+  category!: string;
 
-  @Column({ type: 'int', nullable: true })
-  rangeKm: number;
+  @Column()
+  rangeKm!: number;
 
-  @Column({ type: 'int', nullable: true })
-  payloadKg: number;
+  @Column()
+  payloadKg!: number;
 
-  @Column({ type: 'bigint', nullable: true })
-  unitCostUsd: number;
+  @Column('decimal')
+  unitCostUsd!: number;
 
-  @Column({ length: 100 })
-  originCountry: string;
+  @Column()
+  originCountry!: string;
 
-  @Column({ type: 'text', nullable: true })
-  imageUrl: string;
+  @Column()
+  imageUrl!: string;
 
-  @Column({ type: 'text', nullable: true })
-  description: string;
+  @Column()
+  description!: string;
 
-  @Column({ type: 'int', nullable: true })
-  speed: number; // km/h or mach
+  @Column()
+  speed!: number;
 
-  @Column({ type: 'int', default: 0 })
-  quantity: number;
+  @Column()
+  quantity!: number;
 
   @CreateDateColumn()
-  createdAt: Date;
+  createdAt!: Date;
 
   @UpdateDateColumn()
-  updatedAt: Date;
+  updatedAt!: Date;
 }

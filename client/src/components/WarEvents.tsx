@@ -330,6 +330,14 @@ const extractKeyEntities = (text: string): string[] => {
 };
 
 export function WarEvents() {
+  const { backendData, backendStatus, refetch } = useRealTimeData();
+  
+  // Extract data from backendData
+  const events = backendData?.events || [];
+  const loading = backendStatus === 'checking';
+  const error = backendStatus === 'offline' ? 'Backend offline' : null;
+  const refreshData = refetch;
+
   // Add missing state variables
   const [filteredEvents, setFilteredEvents] = useState<WarEvent[]>([]);
   const [severityFilter, setSeverityFilter] = useState<string>('all');
@@ -338,9 +346,6 @@ export function WarEvents() {
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [expandedEvent, setExpandedEvent] = useState<string | null>(null);
 
-  // Use the real-time data hook
-  const { events, loading, error, refreshData } = useRealTimeData();
-  
   // Connection status from real-time data
   const isConnected = !loading && !error;
   const connectionStatus = loading ? 'connecting' : error ? 'error' : 'connected';
@@ -369,7 +374,7 @@ export function WarEvents() {
     }
 
     // Transform events to match WarEvent interface with intelligence processing
-    const transformedEvents: WarEvent[] = events.map(event => {
+    const transformedEvents: WarEvent[] = events.map((event: any) => {
       // Process military intelligence
       const intelligence = processWarIntelligence(
         event.title || '', 

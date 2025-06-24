@@ -2,68 +2,62 @@ import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateCol
 import { Weapon } from './Weapon';
 
 @Entity('attacks')
-@Index(['date', 'attackerCountry', 'defenderCountry'])
-@Index(['source', 'sourceId'], { unique: true })
 export class Attack {
   @PrimaryGeneratedColumn('uuid')
-  id: string;
+  id!: string;
 
-  @Column({ length: 100 })
-  source: string;
+  @Column()
+  source!: string;
 
-  @Column({ length: 255 })
-  sourceId: string;
+  @Column()
+  sourceId!: string;
 
-  @Column({ type: 'timestamptz' })
-  date: Date;
+  @Column()
+  date!: Date;
 
-  @Column({ length: 100 })
-  attackerCountry: string;
+  @Column()
+  attackerCountry!: string;
 
-  @Column({ length: 100 })
-  defenderCountry: string;
+  @Column()
+  defenderCountry!: string;
 
-  @Column({ length: 255 })
-  locationName: string;
+  @Column()
+  locationName!: string;
 
-  @Column({ type: 'decimal', precision: 10, scale: 7, nullable: true })
-  latitude: number;
+  @Column('decimal')
+  latitude!: number;
 
-  @Column({ type: 'decimal', precision: 10, scale: 7, nullable: true })
-  longitude: number;
+  @Column('decimal')
+  longitude!: number;
 
   @ManyToMany(() => Weapon)
-  @JoinTable({
-    name: 'attack_weapons',
-    joinColumn: { name: 'attackId', referencedColumnName: 'id' },
-    inverseJoinColumn: { name: 'weaponId', referencedColumnName: 'id' }
-  })
-  weaponsUsed: Weapon[];
+  @JoinTable()
+  weaponsUsed!: Weapon[];
 
-  @Column({ type: 'int', default: 0 })
-  fatalities: number;
+  @Column()
+  fatalities!: number;
 
-  @Column({ type: 'int', default: 0 })
-  injuries: number;
+  @Column()
+  injuries!: number;
 
-  @Column({ type: 'bigint', nullable: true })
-  costOfDamageUsd: number;
+  @Column('decimal')
+  costOfDamageUsd!: number;
 
-  @Column({ type: 'text', array: true, default: '{}' })
-  sourceUrls: string[];
+  @Column('text', { array: true })
+  sourceUrls!: string[];
 
-  @Column({ length: 50, default: 'unknown' })
-  attackType: string; // 'airstrike', 'missile', 'ground', 'naval'
+  @Column()
+  attackType!: string;
 
-  @Column({ type: 'text', nullable: true })
-  description: string;
+  @Column()
+  description!: string;
 
-  @Column({ length: 50, default: 'medium' })
-  severity: string;
+  @Column()
+  severity!: string;
 
   @CreateDateColumn()
-  createdAt: Date;
+  createdAt!: Date;
 
   @UpdateDateColumn()
-  updatedAt: Date;
+  updatedAt!: Date;
 }

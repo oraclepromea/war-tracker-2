@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { supabase, isSupabaseAvailable } from '@/lib/supabase';
+import { supabase } from '@/lib/supabase';
 
 interface WarEvent {
   id: number;
@@ -18,13 +18,6 @@ export const useWarEvents = () => {
   const [error, setError] = useState<Error | null>(null);
 
   const fetchWarEvents = async () => {
-    if (!isSupabaseAvailable()) {
-      console.log('📊 Using fallback war events data');
-      setEvents(mockWarEvents);
-      setLoading(false);
-      return;
-    }
-
     try {
       setLoading(true);
       setError(null);

@@ -1470,7 +1470,7 @@ export function CountriesAndForces() {
                           TOTAL {selectedWeaponType === 'all' ? 'ARSENAL' : selectedWeaponType.toUpperCase()} VALUE
                         </div>
                         <div className="text-2xl font-tactical text-neon-400">
-                          {formatCost(getTotalArsenalValue(country, selectedWeaponType))}
+                          {formatCost(Number(getTotalArsenalValue(country, selectedWeaponType)))}
                         </div>
                       </div>
                     </div>
