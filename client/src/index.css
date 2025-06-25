@@ -1,7 +1,4 @@
 @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Orbitron:wght@400;500;600;700;900&display=swap');
-@import 'tailwindcss/base';
-@import 'tailwindcss/components';
-@import 'tailwindcss/utilities';
 
 /* War Tracker 2.0 Custom Styles */
 :root {
@@ -16,41 +13,162 @@
   --neon-950: #001a0f;
 }
 
+/* Reset and base styles */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
 body {
-  @apply bg-tactical-bg text-tactical-text font-mono;
+  background-color: var(--tactical-bg);
+  color: var(--tactical-text);
+  font-family: 'JetBrains Mono', 'Courier New', monospace;
   margin: 0;
   padding: 0;
   min-height: 100vh;
   background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 100%);
 }
 
-* {
-  @apply border-tactical-border;
+/* Utility classes */
+.min-h-screen { min-height: 100vh; }
+.h-16 { height: 4rem; }
+.h-6 { height: 1.5rem; }
+.w-6 { width: 1.5rem; }
+.h-0.5 { height: 0.125rem; }
+.w-2 { width: 0.5rem; }
+.h-2 { height: 0.5rem; }
+
+.flex { display: flex; }
+.items-center { align-items: center; }
+.justify-between { justify-content: space-between; }
+.justify-center { justify-content: center; }
+.space-x-1 > * + * { margin-left: 0.25rem; }
+.space-x-2 > * + * { margin-left: 0.5rem; }
+.space-x-3 > * + * { margin-left: 0.75rem; }
+.space-x-4 > * + * { margin-left: 1rem; }
+.space-x-6 > * + * { margin-left: 1.5rem; }
+
+.hidden { display: none; }
+.block { display: block; }
+.relative { position: relative; }
+.fixed { position: fixed; }
+.inset-0 { top: 0; right: 0; bottom: 0; left: 0; }
+.bottom-0 { bottom: 0; }
+.left-0 { left: 0; }
+.right-0 { right: 0; }
+.z-10 { z-index: 10; }
+.z-20 { z-index: 20; }
+.z-30 { z-index: 30; }
+
+.container { 
+  width: 100%;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 1rem;
+  padding-right: 1rem;
 }
+
+.px-2 { padding-left: 0.5rem; padding-right: 0.5rem; }
+.px-3 { padding-left: 0.75rem; padding-right: 0.75rem; }
+.px-4 { padding-left: 1rem; padding-right: 1rem; }
+.py-1 { padding-top: 0.25rem; padding-bottom: 0.25rem; }
+.py-2 { padding-top: 0.5rem; padding-bottom: 0.5rem; }
+.pb-4 { padding-bottom: 1rem; }
+
+.text-xs { font-size: 0.75rem; }
+.text-sm { font-size: 0.875rem; }
+.text-xl { font-size: 1.25rem; }
+.text-2xl { font-size: 1.5rem; }
+
+.font-mono { font-family: 'JetBrains Mono', 'Courier New', monospace; }
+.font-bold { font-weight: 700; }
+.uppercase { text-transform: uppercase; }
+
+.rounded { border-radius: 0.375rem; }
+.rounded-full { border-radius: 9999px; }
+
+.border { border-width: 1px; }
+.border-t { border-top-width: 1px; }
+.border-b { border-bottom-width: 1px; }
+
+.opacity-20 { opacity: 0.2; }
+.opacity-5 { opacity: 0.05; }
+
+.pointer-events-none { pointer-events: none; }
+.cursor-pointer { cursor: pointer; }
+
+.transition-all { transition: all 0.15s ease-in-out; }
+.transition-colors { transition: color 0.15s ease-in-out, background-color 0.15s ease-in-out; }
+.transition-transform { transition: transform 0.15s ease-in-out; }
+
+/* Tactical components */
+.bg-tactical-bg { background-color: var(--tactical-bg); }
+.bg-tactical-panel { background-color: var(--tactical-panel); }
+.border-tactical-border { border-color: var(--tactical-border); }
+.text-tactical-text { color: var(--tactical-text); }
+.text-tactical-muted { color: var(--tactical-muted); }
+.text-neon-400 { color: var(--neon-400); }
+.text-green-400 { color: #4ade80; }
+.text-red-400 { color: #f87171; }
+.bg-green-400 { background-color: #4ade80; }
 
 .font-tactical {
-  @apply font-mono font-bold tracking-wider uppercase;
-}
-
-.neon-border {
-  @apply border border-neon-400/30 shadow-lg shadow-neon-400/10;
+  font-family: 'JetBrains Mono', 'Courier New', monospace;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
 }
 
 .tactical-panel {
-  @apply bg-tactical-panel border border-tactical-border/50;
+  background-color: var(--tactical-panel);
+  border: 1px solid var(--tactical-border);
 }
 
-/* Neon glow effects */
-.neon-glow {
-  text-shadow: 0 0 5px var(--neon-400), 0 0 10px var(--neon-400), 0 0 15px var(--neon-400);
+.neon-border {
+  border: 1px solid var(--neon-400);
+  box-shadow: 0 0 10px rgba(0, 255, 136, 0.3);
 }
 
-/* Tactical grid overlay */
-.tactical-grid {
-  background-image: 
-    linear-gradient(rgba(0, 255, 136, 0.1) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(0, 255, 136, 0.1) 1px, transparent 1px);
-  background-size: 20px 20px;
+/* Hover effects */
+.hover\:text-neon-400:hover { color: var(--neon-400); }
+.hover\:bg-tactical-bg:hover { background-color: var(--tactical-bg); }
+
+/* Transform utilities */
+.rotate-45 { transform: rotate(45deg); }
+.-rotate-45 { transform: rotate(-45deg); }
+.translate-y-0\.5 { transform: translateY(0.125rem); }
+.-translate-y-0\.5 { transform: translateY(-0.125rem); }
+.my-0\.5 { margin-top: 0.125rem; margin-bottom: 0.125rem; }
+
+/* Background effects */
+.bg-neon-400\/20 { background-color: rgba(0, 255, 136, 0.2); }
+
+/* Animations */
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.animate-pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* HUD scanline effect */
+.hud-scanline {
+  background: linear-gradient(
+    transparent 50%, 
+    rgba(0, 255, 136, 0.03) 50%, 
+    rgba(0, 255, 136, 0.03) 51%, 
+    transparent 51%
+  );
+  background-size: 100% 2px;
+  animation: scanline 2s linear infinite;
+}
+
+@keyframes scanline {
+  0% { background-position: 0 0; }
+  100% { background-position: 0 100%; }
 }
 
 /* Custom scrollbar */
@@ -71,80 +189,36 @@ body {
   background: var(--neon-500);
 }
 
-/* HUD scanline effect */
-.hud-scanline {
-  background: linear-gradient(
-    transparent 50%, 
-    rgba(0, 255, 136, 0.03) 50%, 
-    rgba(0, 255, 136, 0.03) 51%, 
-    transparent 51%
-  );
-  background-size: 100% 2px;
-  animation: scanline 2s linear infinite;
-}
-
-@keyframes scanline {
-  0% { background-position: 0 0; }
-  100% { background-position: 0 100%; }
-}
-
-/* Tactical components */
-.bg-tactical-bg {
-  background-color: var(--tactical-bg);
-}
-
-.bg-tactical-panel {
-  background-color: var(--tactical-panel);
-}
-
-.border-tactical-border {
-  border-color: var(--tactical-border);
-}
-
-.text-tactical-text {
-  color: var(--tactical-text);
-}
-
-.text-tactical-muted {
-  color: var(--tactical-muted);
-}
-
-.text-neon-400 {
-  color: var(--neon-400);
-}
-
-/* Animations */
-@keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.5; }
-}
-
-.animate-pulse {
-  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-}
-
 /* Responsive design */
-@media (max-width: 768px) {
-  .tactical-panel {
-    @apply mx-2;
+@media (min-width: 768px) {
+  .md\:flex { display: flex; }
+  .md\:hidden { display: none; }
+  .container {
+    max-width: 1200px;
   }
 }
 
 /* Card components */
 .card {
-  @apply bg-tactical-panel border border-tactical-border rounded-lg shadow-lg;
+  background-color: var(--tactical-panel);
+  border: 1px solid var(--tactical-border);
+  border-radius: 0.5rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
 }
 
 .card-header {
-  @apply p-6 pb-4;
+  padding: 1.5rem 1.5rem 1rem 1.5rem;
 }
 
 .card-title {
-  @apply text-lg font-semibold text-neon-400;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--neon-400);
 }
 
 .card-content {
-  @apply p-6 pt-0;
+  padding: 1.5rem;
+  padding-top: 0;
 }
 
 /* Utility classes */
